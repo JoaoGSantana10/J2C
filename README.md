@@ -9,7 +9,8 @@ Mais do que um exercício acadêmico, este projeto é uma imersão prática em c
 Desenvolvido na disciplina de Compiladores 1 (UnB/FGA Gama, turma 01), o projeto tem como objetivo construir um compilador/transpilador capaz de traduzir um subconjunto da linguagem Java para código COBOL equivalente e funcional, percorrendo — na prática, não só na teoria — todas as etapas clássicas da construção de um compilador:
 
 1 - Análise Léxica — tokenização do código-fonte Java  
-2 - Análise Sintática — construção da Árvore Sintática Abstrata (AST)
-3 - Análise Semântica — verificação de tipos, escopo e regras da linguagem
-4 - Geração de Código Intermediário (opcional, dependendo do escopo da disciplina)
-5 - Geração de Código COBOL — tradução da AST para código COBOL válido
+2 - Análise Sintática — construção da Árvore Sintática Abstrata (AST)  
+3 - Análise Semântica — verificação de tipos, escopo e regras da linguagem  
+4 - Geração de Código Intermediário (opcional, dependendo do escopo da disciplina)  
+5 - Geração de Código COBOL — tradução da AST para código COBOL válido  
+
