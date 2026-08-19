@@ -1,4 +1,4 @@
-# JaCOBOL
+# J2C (J to C)
 
 ## 📖 Sobre o projeto
 
