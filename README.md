@@ -2,6 +2,8 @@
 
 ## 📖 Sobre o projeto
 
+Este repositório reúne o desenvolvimento do projeto prático da disciplina de Compiladores 1, do curso de Engenharia de Software da Universidade de Brasília (UnB) — Campus FGA Gama, turma 01, Grupo 7. 
+
 Imagine pegar um programa escrito em uma linguagem orientada a objetos moderna — com décadas de boas práticas de engenharia de software embutidas — e traduzi-lo automaticamente para C, a linguagem que moldou praticamente toda a computação de sistemas desde a década de 1970 e que ainda hoje está por trás de sistemas operacionais, firmwares, bancos de dados e boa parte da infraestrutura crítica do mundo. É exatamente essa ponte entre dois paradigmas — o orientado a objetos e o procedural — que o JaCOBOL se propõe a construir.
 
 Mais do que um exercício acadêmico, este projeto é uma imersão prática em como compiladores realmente funcionam por dentro: como um texto puro se transforma em tokens, como esses tokens ganham estrutura e significado através de uma gramática formal, como essa estrutura é validada semanticamente, e como ela é reorganizada e reescrita em uma linguagem-alvo com um modelo de execução fundamentalmente diferente — sem classes, sem objetos, sem herança, apenas funções, structs e memória gerenciada explicitamente.
