@@ -71,6 +71,7 @@ ALFANUM     [a-zA-Z_$0-9]
 {DIGITO}+"."{DIGITO}+[Ff] {printf("Literal float encontrado: %s\n", yytext);}
 "'"."'" {printf("Literal char encontrado: %s\n", yytext);}
 \".*\" {printf("Literal string encontrado: %s\n", yytext);}
+. {printf("Erro léxico: caractere inesperado: %s\n", yytext);}
 
 
 %%

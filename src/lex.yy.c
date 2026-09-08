@@ -351,8 +351,8 @@ static void yynoreturn yy_fatal_error ( const char* msg  );
 	(yy_hold_char) = *yy_cp; \
 	*yy_cp = '\0'; \
 	(yy_c_buf_p) = yy_cp;
-#define YY_NUM_RULES 55
-#define YY_END_OF_BUFFER 56
+#define YY_NUM_RULES 56
+#define YY_END_OF_BUFFER 57
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -362,7 +362,7 @@ struct yy_trans_info
 	};
 static const flex_int16_t yy_accept[121] =
     {   0,
-        0,    0,   56,   55,    3,    2,   18,   55,   49,    8,
+        0,    0,   57,   55,    3,    2,   18,   55,   49,    8,
        55,   55,   23,   24,    6,    4,   31,    5,   29,    7,
         1,   30,   12,    9,   11,   27,   28,   49,   49,   49,
        49,   49,   49,   49,   49,   49,   49,   25,   55,   26,
@@ -1074,10 +1074,15 @@ YY_RULE_SETUP
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 76 "scanner.l"
+#line 74 "scanner.l"
+{printf("Erro léxico: caractere inesperado: %s\n", yytext);}
+	YY_BREAK
+case 56:
+YY_RULE_SETUP
+#line 77 "scanner.l"
 ECHO;
 	YY_BREAK
-#line 1081 "lex.yy.c"
+#line 1086 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2082,7 +2087,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 76 "scanner.l"
+#line 77 "scanner.l"
 
 
 
