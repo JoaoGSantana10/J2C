@@ -66,6 +66,12 @@ ALFANUM     [a-zA-Z_$0-9]
 
 
 {LETRA}{ALFANUM}* {printf("Identificador encontrado: %s\n", yytext);}
+{DIGITO}+[Ll]     {printf("Literal long encontrado: %s\n", yytext);}
+{DIGITO}+"."{DIGITO}+ {printf("Literal double encontrado: %s\n", yytext);}
+{DIGITO}+"."{DIGITO}+[Ff] {printf("Literal float encontrado: %s\n", yytext);}
+"'"."'" {printf("Literal char encontrado: %s\n", yytext);}
+\".*\" {printf("Literal string encontrado: %s\n", yytext);}
+
 
 %%
 
