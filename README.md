@@ -105,9 +105,28 @@ gcc saida/MeuPrograma.c -o saida/MeuPrograma
 ./saida/MeuPrograma
 ```
 
-## Equipe
+## 🤝 Equipe
 
-<img src="https://github.com/macedoPedro20">
-<img src="https://github.com/JoaoGSantana10">
-<img src="https://github.com/gusmoles">
-<img src="https://github.com/RodrigoCBarbosa">
+## 🤝 Equipe
+
+<div align="center">
+  <a href="https://github.com/macedoPedro20">
+    <img src="https://github.com/macedoPedro20.png" width="100" alt="Pedro Macedo"><br>
+    <sub><b>Pedro Macedo</b></sub>
+  </a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://github.com/JoaoGSantana10">
+    <img src="https://github.com/JoaoGSantana10.png" width="100" alt="João Santana"><br>
+    <sub><b>João Santana</b></sub>
+  </a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://github.com/gusmoles">
+    <img src="https://github.com/gusmoles.png" width="100" alt="gusmoles"><br>
+    <sub><b>Guilherme Gusmão</b></sub>
+  </a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://github.com/RodrigoCBarbosa">
+    <img src="https://github.com/RodrigoCBarbosa.png" width="100" alt="Rodrigo Barbosa"><br>
+    <sub><b>Rodrigo Barbosa</b></sub>
+  </a>
+</div>
