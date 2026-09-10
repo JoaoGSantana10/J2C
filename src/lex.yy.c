@@ -1,6 +1,5 @@
-#line 2 "src/lex.yy.c"
 
-#line 4 "src/lex.yy.c"
+#line 3 "lex.yy.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -517,15 +516,15 @@ int yy_flex_debug = 0;
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
-#line 1 "src/scanner.l"
-#line 2 "src/scanner.l"
+#line 1 "scanner.l"
+#line 2 "scanner.l"
 #include <stdio.h>
 #include <stdlib.h>
 int contLinha = 1;
 /* aqui entram includes extras, ex: "y.tab.h" quando o Bison estiver pronto */
-#line 527 "src/lex.yy.c"
+#line 526 "lex.yy.c"
 /* Seção de definições: nomes reutilizáveis para expressões regulares (opcional) */
-#line 529 "src/lex.yy.c"
+#line 528 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -742,10 +741,10 @@ YY_DECL
 		}
 
 	{
-#line 13 "src/scanner.l"
+#line 13 "scanner.l"
 
 
-#line 749 "src/lex.yy.c"
+#line 748 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -804,286 +803,286 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 15 "src/scanner.l"
+#line 15 "scanner.l"
 {printf ("Número encontrado %s\n", yytext);}
 	YY_BREAK
 case 2:
 /* rule 2 can match eol */
 YY_RULE_SETUP
-#line 16 "src/scanner.l"
+#line 16 "scanner.l"
 {contLinha++;}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 17 "src/scanner.l"
+#line 17 "scanner.l"
 {/*Ignora espaços em branco*/}
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 19 "src/scanner.l"
+#line 19 "scanner.l"
 {printf("Operador soma encontrado %s\n",  yytext);}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 20 "src/scanner.l"
+#line 20 "scanner.l"
 {printf("Operador subtração encontrado %s\n",  yytext);}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 21 "src/scanner.l"
+#line 21 "scanner.l"
 {printf("Operador multiplicação encontrado %s\n",  yytext);}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 22 "src/scanner.l"
+#line 22 "scanner.l"
 {printf("Operador divisão encontrado %s\n",  yytext);}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 23 "src/scanner.l"
+#line 23 "scanner.l"
 {printf("Operador módulo encontrado %s\n",  yytext);}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 24 "src/scanner.l"
+#line 24 "scanner.l"
 {printf("Operador atribuição encontrado %s\n",  yytext);}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 25 "src/scanner.l"
+#line 25 "scanner.l"
 {printf("Operador igualdade encontrado %s\n",  yytext);}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 26 "src/scanner.l"
+#line 26 "scanner.l"
 {printf("Operador maior que encontrado %s\n",  yytext);}
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 27 "src/scanner.l"
+#line 27 "scanner.l"
 {printf("Operador menor que encontrado %s\n",  yytext);}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 28 "src/scanner.l"
+#line 28 "scanner.l"
 {printf("Operador maior igual encontrado %s\n",  yytext);}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 29 "src/scanner.l"
+#line 29 "scanner.l"
 {printf("Operador menor igual encontrado %s\n",  yytext);}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 30 "src/scanner.l"
+#line 30 "scanner.l"
 {printf("Operador deferença encontrado %s\n",  yytext);}
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 31 "src/scanner.l"
+#line 31 "scanner.l"
 {printf("Operador E lógico encontrado %s\n",  yytext);}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 32 "src/scanner.l"
+#line 32 "scanner.l"
 {printf("Operador OU lógico encontrado %s\n",  yytext);}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 33 "src/scanner.l"
+#line 33 "scanner.l"
 {printf("Operador negação encontrado %s\n",  yytext);}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 34 "src/scanner.l"
+#line 34 "scanner.l"
 {printf("Operador soma-atribuição encontrado %s\n",  yytext);}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 35 "src/scanner.l"
+#line 35 "scanner.l"
 {printf("Operador subtração-atribuição encontrado %s\n",  yytext);}
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 36 "src/scanner.l"
+#line 36 "scanner.l"
 {printf("Operador incremento encontrado %s\n",  yytext);}
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 37 "src/scanner.l"
+#line 37 "scanner.l"
 {printf("Operador decremento encontrado %s\n",  yytext);}
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 39 "src/scanner.l"
+#line 39 "scanner.l"
 {printf("Abre parênteses encontrado %s\n", yytext);}
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 40 "src/scanner.l"
+#line 40 "scanner.l"
 {printf("Fecha parênteses encontrado %s\n", yytext);}
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 41 "src/scanner.l"
+#line 41 "scanner.l"
 {printf("Abre chaves encontrado %s\n", yytext);}
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 42 "src/scanner.l"
+#line 42 "scanner.l"
 {printf("Fecha chaves encontrado %s\n", yytext);}
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 43 "src/scanner.l"
+#line 43 "scanner.l"
 {printf("Abre colchetes encontrado %s\n", yytext);}
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 44 "src/scanner.l"
+#line 44 "scanner.l"
 {printf("Fecha colchetes encontrado %s\n", yytext);}
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 45 "src/scanner.l"
+#line 45 "scanner.l"
 {printf("Ponto encontrado %s\n", yytext);}
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 46 "src/scanner.l"
+#line 46 "scanner.l"
 {printf("Ponto e vírgula encontrado %s\n", yytext);}
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 47 "src/scanner.l"
+#line 47 "scanner.l"
 {printf("Vírgula encontrado %s\n", yytext);}
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 49 "src/scanner.l"
+#line 49 "scanner.l"
 {printf("Palavra-chave tipo int encontrada %s\n", yytext);}
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 50 "src/scanner.l"
+#line 50 "scanner.l"
 {printf("Palavra-chave tipo double encontrada %s\n", yytext);}
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 51 "src/scanner.l"
+#line 51 "scanner.l"
 {printf("Palavra-chave tipo float encontrada %s\n", yytext);}  
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 52 "src/scanner.l"
+#line 52 "scanner.l"
 {printf("Palavra-chave tipo boolean encontrada %s\n", yytext);} 
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 53 "src/scanner.l"
+#line 53 "scanner.l"
 {printf("Palavra-chave tipo char encontrada %s\n", yytext);}
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 54 "src/scanner.l"
+#line 54 "scanner.l"
 {printf("Palavra-chave tipo long encontrada %s\n", yytext);}
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 55 "src/scanner.l"
+#line 55 "scanner.l"
 {printf("Palavra-chave tipo if encontrada %s\n", yytext);}
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 56 "src/scanner.l"
+#line 56 "scanner.l"
 {printf("Palavra-chave tipo else encontrada %s\n", yytext);}
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 57 "src/scanner.l"
+#line 57 "scanner.l"
 {printf("Palavra-chave tipo while encontrada %s\n", yytext);}
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 58 "src/scanner.l"
+#line 58 "scanner.l"
 {printf("Palavra-chave tipo for encontrada %s\n", yytext);}
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 59 "src/scanner.l"
+#line 59 "scanner.l"
 {printf("Palavra-chave tipo do encontrada %s\n", yytext);}
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 60 "src/scanner.l"
+#line 60 "scanner.l"
 {printf("Palavra-chave tipo switch encontrada %s\n", yytext);}
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 61 "src/scanner.l"
+#line 61 "scanner.l"
 {printf("Palavra-chave tipo case encontrada %s\n", yytext);}
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 62 "src/scanner.l"
+#line 62 "scanner.l"
 {printf("Palavra-chave tipo break encontrada %s\n", yytext);}
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 63 "src/scanner.l"
+#line 63 "scanner.l"
 {printf("Palavra-chave tipo default encontrada %s\n", yytext);}
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 64 "src/scanner.l"
+#line 64 "scanner.l"
 {printf("Literal booleano true encontrado %s\n", yytext);}
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 65 "src/scanner.l"
+#line 65 "scanner.l"
 {printf("Literal booleano false encontrado %s\n", yytext);}
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 68 "src/scanner.l"
+#line 68 "scanner.l"
 {printf("Identificador encontrado: %s\n", yytext);}
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 69 "src/scanner.l"
+#line 69 "scanner.l"
 {printf("Literal long encontrado: %s\n", yytext);}
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 70 "src/scanner.l"
+#line 70 "scanner.l"
 {printf("Literal double encontrado: %s\n", yytext);}
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 71 "src/scanner.l"
+#line 71 "scanner.l"
 {printf("Literal float encontrado: %s\n", yytext);}
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 72 "src/scanner.l"
+#line 72 "scanner.l"
 {printf("Literal char encontrado: %s\n", yytext);}
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 73 "src/scanner.l"
+#line 73 "scanner.l"
 {printf("Literal string encontrado: %s\n", yytext);}
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 74 "src/scanner.l"
+#line 74 "scanner.l"
 {printf("Erro léxico: caractere inesperado: %s\n", yytext);}
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 77 "src/scanner.l"
+#line 77 "scanner.l"
 ECHO;
 	YY_BREAK
-#line 1087 "src/lex.yy.c"
+#line 1086 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2088,7 +2087,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 77 "src/scanner.l"
+#line 77 "scanner.l"
 
 
 
@@ -2096,8 +2095,10 @@ int yywrap(void) {
     return 1;
 }
 
+#ifndef TEST_MODE
 int main(void) {
     yylex();
     printf("\nNumero de linhas %d\n", contLinha);
     return 0;
 }
+#endif
