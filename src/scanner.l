@@ -81,8 +81,10 @@ int yywrap(void) {
     return 1;
 }
 
+#ifndef TEST_MODE
 int main(void) {
     yylex();
     printf("\nNumero de linhas %d\n", contLinha);
     return 0;
 }
+#endif
