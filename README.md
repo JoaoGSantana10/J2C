@@ -1,4 +1,4 @@
-# ☕ Java2C — Compilador / Transpilador de Java para C
+# ☕ J2C — Compilador / Transpilador de Java para C
 
 ![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
 ![C](https://img.shields.io/badge/C-00599C?style=for-the-badge&logo=c&logoColor=white)
@@ -16,15 +16,14 @@
 - [🚀 Configuração do Ambiente e Testes](#-configuração-do-ambiente-e-testes)
   - [Pré-requisitos](#pré-requisitos)
   - [Instalação e Build](#instalação-e-build)
-  - [Como Executar o Compilador](#como-executar-o-compilador)
   - [Compilando e Executando o Código C Gerado](#compilando-e-executando-o-código-c-gerado)
-- [🤝 Equipe](#-equipe)
+- [🤝 Equipe](#equipe)
 
 ---
 
 ## 📖 Sobre o Projeto
 
-O **Java2C** é um transpilador (compilador de código para código) que traduz um subconjunto da linguagem **Java** para código-fonte em **C** (`ANSI C` / `C99`) eficiente e legível.
+O **J2C** é um transpilador (compilador de código para código) que traduz um subconjunto da linguagem **Java** para código-fonte em **C** (`ANSI C` / `C99`) eficiente e legível.
 
 O projeto implementa todas as etapas clássicas do pipeline de compilação:
 
@@ -133,5 +132,12 @@ gcc saida/MeuPrograma.c -o saida/MeuPrograma
         <sub><b>Rodrigo Barbosa</b></sub>
       </a>
     </td>
+    <td align="center">
+      <a href="https://github.com/Nic0laslc">
+        <img src="https://github.com/Nic0laslc.png" width="100px;" alt="Rodrigo Barbosa"/><br />
+        <sub><b>Nicolas Lopes</b></sub>
+      </a>
+    </td>
   </tr>
 </table>
+
