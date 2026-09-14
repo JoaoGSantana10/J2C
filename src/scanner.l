@@ -1,6 +1,7 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include "y.tab.h"
 int contLinha = 1;
 /* aqui entram includes extras, ex: "y.tab.h" quando o Bison estiver pronto */
 %}
