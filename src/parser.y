@@ -66,8 +66,13 @@ void yyerror(const char *s);
 /* Regras de gramática */
 
 programa
-    :
-    ;
+    : programa declaracao
+    | declaracao
+;
+declaracao
+    : decl_variavel
+    | decl_funcao
+; 
 
 
 %%
