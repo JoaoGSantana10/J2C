@@ -1,7 +1,7 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-#include "y.tab.h"
+#include "parser.tab.h"
 int contLinha = 1;
 /* aqui entram includes extras, ex: "y.tab.h" quando o Bison estiver pronto */
 %}
@@ -13,65 +13,62 @@ ALFANUM     [a-zA-Z_$0-9]
 
 %%
 
-{DIGITO}+ {printf ("Número encontrado %s\n", yytext);}
+{DIGITO}+ {return LIT_INT;}
 \n        {contLinha++;}
 [ \t]+    {/*Ignora espaços em branco*/}
 
-"+"    {printf("Operador soma encontrado %s\n",  yytext);}
-"-"    {printf("Operador subtração encontrado %s\n",  yytext);}
-"*"    {printf("Operador multiplicação encontrado %s\n",  yytext);}
-"/"    {printf("Operador divisão encontrado %s\n",  yytext);}
-"%"    {printf("Operador módulo encontrado %s\n",  yytext);}
-"="    {printf("Operador atribuição encontrado %s\n",  yytext);}
-"=="   {printf("Operador igualdade encontrado %s\n",  yytext);}
-">"    {printf("Operador maior que encontrado %s\n",  yytext);}
-"<"    {printf("Operador menor que encontrado %s\n",  yytext);}
-">="   {printf("Operador maior igual encontrado %s\n",  yytext);}
-"<="   {printf("Operador menor igual encontrado %s\n",  yytext);}
-"!="   {printf("Operador deferença encontrado %s\n",  yytext);}
-"&&"   {printf("Operador E lógico encontrado %s\n",  yytext);}
-"||"   {printf("Operador OU lógico encontrado %s\n",  yytext);}
-"!"    {printf("Operador negação encontrado %s\n",  yytext);}
-"+="   {printf("Operador soma-atribuição encontrado %s\n",  yytext);}
-"-="   {printf("Operador subtração-atribuição encontrado %s\n",  yytext);}
-"++"   {printf("Operador incremento encontrado %s\n",  yytext);}
-"--"   {printf("Operador decremento encontrado %s\n",  yytext);}
+"+"    {return '+';}
+"-"    {return '-';}
+"*"    {return '*';}
+"/"    {return '/';}
+"%"    {return '%';}
+"=="   {return OP_IGUAL;}
+">"    {return '>';}
+"<"    {return '<';}
+">="   {return OP_MAIOR_IGUAL;}
+"<="   {return OP_MENOR_IGUAL;}
+"!="   {return OP_DIFERENTE;}
+"&&"   {return OP_AND;}
+"||"   {return OP_OR;}
+"!"    {return '!';}
+"+="   {return OP_PLUS_ASSIGN;}
+"-="   {return OP_MINUS_ASSIGN;}
+"++"   {return OP_INC;}
+"--"   {return OP_DEC;}
 
-"("    {printf("Abre parênteses encontrado %s\n", yytext);}
-")"    {printf("Fecha parênteses encontrado %s\n", yytext);}
-"{"    {printf("Abre chaves encontrado %s\n", yytext);}
-"}"    {printf("Fecha chaves encontrado %s\n", yytext);}
-"["    {printf("Abre colchetes encontrado %s\n", yytext);}
-"]"    {printf("Fecha colchetes encontrado %s\n", yytext);}
-"."    {printf("Ponto encontrado %s\n", yytext);}
-";"    {printf("Ponto e vírgula encontrado %s\n", yytext);}
-","    {printf("Vírgula encontrado %s\n", yytext);}
+"("    {return '(';}
+")"    {return ')';}
+"{"    {return '{';}
+"}"    {return '}';}
+"["    {return '[';}
+"]"    {return ']';}
+"."    {return '.';}
+","    {return ',';}
 
-"int"     {printf("Palavra-chave tipo int encontrada %s\n", yytext);}
-"double"  {printf("Palavra-chave tipo double encontrada %s\n", yytext);}
-"float"   {printf("Palavra-chave tipo float encontrada %s\n", yytext);}  
-"boolean" {printf("Palavra-chave tipo boolean encontrada %s\n", yytext);} 
-"char"    {printf("Palavra-chave tipo char encontrada %s\n", yytext);}
-"long"    {printf("Palavra-chave tipo long encontrada %s\n", yytext);}
-"if"      {printf("Palavra-chave tipo if encontrada %s\n", yytext);}
-"else"    {printf("Palavra-chave tipo else encontrada %s\n", yytext);}
-"while"   {printf("Palavra-chave tipo while encontrada %s\n", yytext);}
-"for"     {printf("Palavra-chave tipo for encontrada %s\n", yytext);}
-"do"      {printf("Palavra-chave tipo do encontrada %s\n", yytext);}
-"switch"  {printf("Palavra-chave tipo switch encontrada %s\n", yytext);}
-"case"    {printf("Palavra-chave tipo case encontrada %s\n", yytext);}
-"break"   {printf("Palavra-chave tipo break encontrada %s\n", yytext);}
-"default" {printf("Palavra-chave tipo default encontrada %s\n", yytext);}
-"true"    {printf("Literal booleano true encontrado %s\n", yytext);}
-"false"   {printf("Literal booleano false encontrado %s\n", yytext);}
+"int"     {return KW_INT;}
+"float"   {return KW_FLOAT;}  
+"boolean" {return KW_BOOLEAN;} 
+"char"    {return KW_CHAR;}
+"long"    {return KW_LONG;}
+"if"      {return KW_IF;}
+"else"    {return KW_ELSE;}
+"while"   {return KW_WHILE;}
+"for"     {return KW_FOR;}
+"do"      {return KW_DO;}
+"switch"  {return KW_SWITCH;}
+"case"    {return KW_CASE;}
+"break"   {return KW_BREAK;}
+"default" {return KW_DEFAULT;}
+"true"    {return KW_TRUE;}
+"false"   {return KW_FALSE;}
 
 
-{LETRA}{ALFANUM}* {printf("Identificador encontrado: %s\n", yytext);}
-{DIGITO}+[Ll]     {printf("Literal long encontrado: %s\n", yytext);}
-{DIGITO}+"."{DIGITO}+ {printf("Literal double encontrado: %s\n", yytext);}
-{DIGITO}+"."{DIGITO}+[Ff] {printf("Literal float encontrado: %s\n", yytext);}
-"'"."'" {printf("Literal char encontrado: %s\n", yytext);}
-\".*\" {printf("Literal string encontrado: %s\n", yytext);}
+{LETRA}{ALFANUM}* {return ID;}
+{DIGITO}+[Ll]     {return LIT_LONG;}
+{DIGITO}+"."{DIGITO}+ {return LIT_DOUBLE;}
+{DIGITO}+"."{DIGITO}+[Ff] {return LIT_FLOAT;}
+"'"."'" {return LIT_CHAR;}
+\".*\" {return LIT_STRING;}
 . {printf("Erro léxico: caractere inesperado: %s\n", yytext);}
 
 
