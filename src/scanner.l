@@ -61,6 +61,7 @@ ALFANUM     [a-zA-Z_$0-9]
 "default" {return KW_DEFAULT;}
 "true"    {return KW_TRUE;}
 "false"   {return KW_FALSE;}
+"return"  {return KW_RETURN}
 
 
 {LETRA}{ALFANUM}* {return ID;}
