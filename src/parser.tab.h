@@ -69,25 +69,26 @@ extern int yydebug;
     KW_CASE = 270,                 /* KW_CASE  */
     KW_BREAK = 271,                /* KW_BREAK  */
     KW_DEFAULT = 272,              /* KW_DEFAULT  */
-    KW_TRUE = 273,                 /* KW_TRUE  */
-    KW_FALSE = 274,                /* KW_FALSE  */
-    ID = 275,                      /* ID  */
-    LIT_INT = 276,                 /* LIT_INT  */
-    LIT_DOUBLE = 277,              /* LIT_DOUBLE  */
-    LIT_LONG = 278,                /* LIT_LONG  */
-    LIT_FLOAT = 279,               /* LIT_FLOAT  */
-    LIT_CHAR = 280,                /* LIT_CHAR  */
-    LIT_STRING = 281,              /* LIT_STRING  */
-    OP_IGUAL = 282,                /* OP_IGUAL  */
-    OP_DIFERENTE = 283,            /* OP_DIFERENTE  */
-    OP_MAIOR_IGUAL = 284,          /* OP_MAIOR_IGUAL  */
-    OP_MENOR_IGUAL = 285,          /* OP_MENOR_IGUAL  */
-    OP_AND = 286,                  /* OP_AND  */
-    OP_OR = 287,                   /* OP_OR  */
-    OP_INC = 288,                  /* OP_INC  */
-    OP_DEC = 289,                  /* OP_DEC  */
-    OP_PLUS_ASSIGN = 290,          /* OP_PLUS_ASSIGN  */
-    OP_MINUS_ASSIGN = 291          /* OP_MINUS_ASSIGN  */
+    KW_RETURN = 273,               /* KW_RETURN  */
+    KW_TRUE = 274,                 /* KW_TRUE  */
+    KW_FALSE = 275,                /* KW_FALSE  */
+    ID = 276,                      /* ID  */
+    LIT_INT = 277,                 /* LIT_INT  */
+    LIT_DOUBLE = 278,              /* LIT_DOUBLE  */
+    LIT_LONG = 279,                /* LIT_LONG  */
+    LIT_FLOAT = 280,               /* LIT_FLOAT  */
+    LIT_CHAR = 281,                /* LIT_CHAR  */
+    LIT_STRING = 282,              /* LIT_STRING  */
+    OP_IGUAL = 283,                /* OP_IGUAL  */
+    OP_DIFERENTE = 284,            /* OP_DIFERENTE  */
+    OP_MAIOR_IGUAL = 285,          /* OP_MAIOR_IGUAL  */
+    OP_MENOR_IGUAL = 286,          /* OP_MENOR_IGUAL  */
+    OP_AND = 287,                  /* OP_AND  */
+    OP_OR = 288,                   /* OP_OR  */
+    OP_INC = 289,                  /* OP_INC  */
+    OP_DEC = 290,                  /* OP_DEC  */
+    OP_PLUS_ASSIGN = 291,          /* OP_PLUS_ASSIGN  */
+    OP_MINUS_ASSIGN = 292          /* OP_MINUS_ASSIGN  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
