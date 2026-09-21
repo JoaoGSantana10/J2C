@@ -1,39 +1,43 @@
-# **:checkered_flag:** Sprint 00
+# **🏁** Sprint 00
 
-Período: 00/00/2025 a 00/00/2025
+Período: 10/08/2025 a 15/08/2025
 
 ## Descrição
 
-> A descrição da Sprint deve conter um resumo do que o time se propôs a fazer.
+> Nesta sprint o time se dedicou às definições iniciais do projeto: formação das equipes, discussão sobre possíveis linguagens de programação e sobre a natureza do trabalho a ser desenvolvido (compilador ou interpretador).
 > 
 
 ## Objetivos
 
-- Objetivo 1
-- Objetivo 2
+- Definir as equipes de trabalho
+- Discutir possíveis linguagens de programação para o projeto
+- Discutir se o projeto seria um compilador ou um interpretador
+- Compreender os conceitos de compilador e interpretador
 
 ## Reuniões
 
 ### Reunião 1
 
-**Data:** 00/00/2025  
-**Local:**  
-**Inicio:** 00:00  
-**Encerramento:** 00:00
+**Data:** 12/08/2025  
+**Local:** Sala de aula  
+**Inicio:** 14:00  
+**Encerramento:** 15:50
 
 **Assuntos:**
 
-* Assunto 1
-* Assunto 2
+* Definição das equipes
+* Discussão sobre linguagens de programação candidatas
+* Discussão sobre compilador vs. interpretador
+* Alinhamento sobre os conceitos de compilador e interpretador
 
 ## Finalização
 
-> A Sprint deve ser finalizada com um resumo do que realmente foi feito e quais tarefas foram postergadas para a próxima Sprint.
+> Ao final da sprint, as equipes foram definidas e o time consolidou o entendimento sobre os conceitos de compilador e interpretador. A escolha da linguagem e a definição final entre compilador ou interpretador ficaram para a próxima sprint.
 > 
 
 ---
 
 **Observações:**
 
-> Esse espaço deve ser utilizado para registrar qualquer observação que o time julgar pertinente.
+> —
 >
