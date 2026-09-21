@@ -1,39 +1,41 @@
-# **:checkered_flag:** Sprint 01
+# **🏁** Sprint 01
 
-Período: 00/00/2025 a 00/00/2025
+Período: 16/08/2025 a 22/08/2026
 
 ## Descrição
 
-> A descrição da Sprint deve conter um resumo do que o time se propôs a fazer.
+> Nesta sprint o time deu início à estruturação prática do projeto, criando o repositório do código e fechando decisões importantes sobre a linguagem a ser utilizada e o tipo de projeto a ser desenvolvido.
 > 
 
 ## Objetivos
 
-- Objetivo 1
-- Objetivo 2
+- Criar o repositório do projeto no GitHub
+- Definir a linguagem de entrada e saída do compilador (Java para Cobol)
+- Definir que o projeto seria um compilador
 
 ## Reuniões
 
 ### Reunião 1
 
-**Data:** 00/00/2025  
-**Local:**  
-**Inicio:** 00:00  
-**Encerramento:** 00:00
+**Data:** 13/08/2026  
+**Local: Sala de aula**  
+**Inicio:** 14:00  
+**Encerramento:** 15:50
 
 **Assuntos:**
 
-* Assunto 1
-* Assunto 2
+* Criação e configuração do repositório no GitHub
+* Definição da linguagem: Java para Cobol
+* Confirmação de que o projeto seria um compilador
 
 ## Finalização
 
-> A Sprint deve ser finalizada com um resumo do que realmente foi feito e quais tarefas foram postergadas para a próxima Sprint.
+> O repositório do projeto foi criado no GitHub. Ficou definido que a linguagem de trabalho seria Java para Cobol e que o projeto seria um compilador, não um interpretador.
 > 
 
 ---
 
 **Observações:**
 
-> Esse espaço deve ser utilizado para registrar qualquer observação que o time julgar pertinente.
+> —
 >
