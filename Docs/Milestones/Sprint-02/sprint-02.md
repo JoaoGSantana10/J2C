@@ -1,39 +1,41 @@
-# **:checkered_flag:** Sprint 02
+# **🏁** Sprint 02
 
-Período: 00/00/2025 a 00/00/2025
+Período: 27/08/2025 a 03/09/2026
 
 ## Descrição
 
-> A descrição da Sprint deve conter um resumo do que o time se propôs a fazer.
+> Nesta sprint o time revisou a escolha da linguagem feita anteriormente, devido a dificuldades encontradas pelo grupo, e iniciou o desenvolvimento da etapa de análise léxica do compilador.
 > 
 
 ## Objetivos
 
-- Objetivo 1
-- Objetivo 2
+- Revisar a escolha da linguagem devido às dificuldades identificadas pelo grupo
+- Definir a nova linguagem de compilação (Java para C)
+- Iniciar a estrutura do analisador léxico (contador de linhas, identificação de dígitos/letras, números e expressões regulares)
 
 ## Reuniões
 
 ### Reunião 1
 
-**Data:** 00/00/2025  
-**Local:**  
-**Inicio:** 00:00  
-**Encerramento:** 00:00
+**Data:** 26/08/2028  
+**Local:**  Sala de aula
+**Inicio:** 14:00 
+**Encerramento:** 15:50
 
 **Assuntos:**
 
-* Assunto 1
-* Assunto 2
+* Discussão sobre as dificuldades com a linguagem anteriormente escolhida (Java para Cobol)
+* Definição da nova linguagem: Java para C
+* Estruturação inicial do léxico (contador de linhas, dígitos/letras, números e expressões regulares)
 
 ## Finalização
 
-> A Sprint deve ser finalizada com um resumo do que realmente foi feito e quais tarefas foram postergadas para a próxima Sprint.
+> A linguagem do projeto foi alterada de Java para Cobol para Java para C, devido a dificuldades mútuas do grupo com a linguagem escolhida anteriormente. Deu-se início à estrutura do léxico, incluindo contador de linhas e expressões regulares para reconhecimento de dígitos, letras e números.
 > 
 
 ---
 
 **Observações:**
 
-> Esse espaço deve ser utilizado para registrar qualquer observação que o time julgar pertinente.
+> Mudança de linguagem foi necessária devido à dificuldade do grupo com Cobol; optou-se por C por ser mais familiar à equipe.
 >
