@@ -1,6 +1,6 @@
 # **🏁** Sprint 01
 
-Período: 16/08/2025 a 22/08/2026
+Período: 16/08/2026 a 22/08/2026
 
 ## Descrição
 
@@ -17,7 +17,7 @@ Período: 16/08/2025 a 22/08/2026
 
 ### Reunião 1
 
-**Data:** 20/08/2026  
+**Data:** 19/08/2026  
 **Local: Sala de aula**  
 **Inicio:** 14:00  
 **Encerramento:** 15:50
