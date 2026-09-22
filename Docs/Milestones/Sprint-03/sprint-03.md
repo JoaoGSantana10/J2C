@@ -1,6 +1,6 @@
 # **:checkered_flag:** Sprint 03
 
-Período: 00/00/2025 a 00/00/2025
+Período: 03/09/2026 a 09/09/2026
 
 ## Descrição
 
