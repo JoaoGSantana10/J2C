@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.8.2.  */
+/* A Bison parser, made by GNU Bison 3.5.1.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2021 Free Software Foundation,
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2020 Free Software Foundation,
    Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 /* As a special exception, you may create a larger work that contains
    part or all of the Bison parser skeleton and distribute that work
@@ -31,9 +31,8 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-/* DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
-   especially those whose name start with YY_ or yy_.  They are
-   private implementation details that can be changed or removed.  */
+/* Undocumented macros, especially those whose name start with YY_,
+   are private implementation details.  Do not rely on them.  */
 
 #ifndef YY_YY_PARSER_TAB_H_INCLUDED
 # define YY_YY_PARSER_TAB_H_INCLUDED
@@ -45,52 +44,49 @@
 extern int yydebug;
 #endif
 
-/* Token kinds.  */
+/* Token type.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
   enum yytokentype
   {
-    YYEMPTY = -2,
-    YYEOF = 0,                     /* "end of file"  */
-    YYerror = 256,                 /* error  */
-    YYUNDEF = 257,                 /* "invalid token"  */
-    KW_INT = 258,                  /* KW_INT  */
-    KW_DOUBLE = 259,               /* KW_DOUBLE  */
-    KW_FLOAT = 260,                /* KW_FLOAT  */
-    KW_BOOLEAN = 261,              /* KW_BOOLEAN  */
-    KW_CHAR = 262,                 /* KW_CHAR  */
-    KW_LONG = 263,                 /* KW_LONG  */
-    KW_IF = 264,                   /* KW_IF  */
-    KW_ELSE = 265,                 /* KW_ELSE  */
-    KW_WHILE = 266,                /* KW_WHILE  */
-    KW_FOR = 267,                  /* KW_FOR  */
-    KW_DO = 268,                   /* KW_DO  */
-    KW_SWITCH = 269,               /* KW_SWITCH  */
-    KW_CASE = 270,                 /* KW_CASE  */
-    KW_BREAK = 271,                /* KW_BREAK  */
-    KW_DEFAULT = 272,              /* KW_DEFAULT  */
-    KW_RETURN = 273,               /* KW_RETURN  */
-    KW_TRUE = 274,                 /* KW_TRUE  */
-    KW_FALSE = 275,                /* KW_FALSE  */
-    ID = 276,                      /* ID  */
-    LIT_INT = 277,                 /* LIT_INT  */
-    LIT_DOUBLE = 278,              /* LIT_DOUBLE  */
-    LIT_LONG = 279,                /* LIT_LONG  */
-    LIT_FLOAT = 280,               /* LIT_FLOAT  */
-    LIT_CHAR = 281,                /* LIT_CHAR  */
-    LIT_STRING = 282,              /* LIT_STRING  */
-    OP_IGUAL = 283,                /* OP_IGUAL  */
-    OP_DIFERENTE = 284,            /* OP_DIFERENTE  */
-    OP_MAIOR_IGUAL = 285,          /* OP_MAIOR_IGUAL  */
-    OP_MENOR_IGUAL = 286,          /* OP_MENOR_IGUAL  */
-    OP_AND = 287,                  /* OP_AND  */
-    OP_OR = 288,                   /* OP_OR  */
-    OP_INC = 289,                  /* OP_INC  */
-    OP_DEC = 290,                  /* OP_DEC  */
-    OP_PLUS_ASSIGN = 291,          /* OP_PLUS_ASSIGN  */
-    OP_MINUS_ASSIGN = 292          /* OP_MINUS_ASSIGN  */
+    KW_INT = 258,
+    KW_DOUBLE = 259,
+    KW_FLOAT = 260,
+    KW_BOOLEAN = 261,
+    KW_CHAR = 262,
+    KW_LONG = 263,
+    KW_IF = 264,
+    KW_ELSE = 265,
+    KW_WHILE = 266,
+    KW_FOR = 267,
+    KW_DO = 268,
+    KW_SWITCH = 269,
+    KW_CASE = 270,
+    KW_BREAK = 271,
+    KW_DEFAULT = 272,
+    KW_RETURN = 273,
+    KW_TRUE = 274,
+    KW_FALSE = 275,
+    ID = 276,
+    LIT_INT = 277,
+    LIT_DOUBLE = 278,
+    LIT_LONG = 279,
+    LIT_FLOAT = 280,
+    LIT_CHAR = 281,
+    LIT_STRING = 282,
+    OP_IGUAL = 283,
+    OP_DIFERENTE = 284,
+    OP_MAIOR_IGUAL = 285,
+    OP_MENOR_IGUAL = 286,
+    OP_AND = 287,
+    OP_OR = 288,
+    OP_INC = 289,
+    OP_DEC = 290,
+    OP_PLUS_ASSIGN = 291,
+    OP_MINUS_ASSIGN = 292,
+    LOWER_THAN_ELSE = 293,
+    UMINUS = 294
   };
-  typedef enum yytokentype yytoken_kind_t;
 #endif
 
 /* Value type.  */
@@ -103,8 +99,6 @@ typedef int YYSTYPE;
 
 extern YYSTYPE yylval;
 
-
 int yyparse (void);
-
 
 #endif /* !YY_YY_PARSER_TAB_H_INCLUDED  */

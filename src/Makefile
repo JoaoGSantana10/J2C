@@ -1,24 +1,30 @@
-# Variáveis de compilação
 CC = gcc
 CFLAGS = -Wall
 FLEX = flex
+BISON = bison
 
-# Executado ao rodar apenas 'make'
-all: scanner
+all: parser
 
-# Compila o scanner executável principal
-scanner: scanner.l
+parser: parser.y scanner.l
+	$(BISON) -d parser.y
 	$(FLEX) scanner.l
-	$(CC) $(CFLAGS) lex.yy.c -o scanner
+	$(CC) $(CFLAGS) parser.tab.c lex.yy.c -o parser
 
-# Compila e roda a suíte de testes unitários
-test:
+# Testes unitários de tokens do scanner
+test-scanner: parser.y scanner.l test_runner.c
+	$(BISON) -d parser.y
 	$(FLEX) scanner.l
 	$(CC) $(CFLAGS) -DTEST_MODE lex.yy.c test_runner.c -o unit_tests
 	./unit_tests
 
-# Limpa todos os arquivos gerados
-clean:
-	rm -f lex.yy.c scanner unit_tests
+# Testes sintáticos do parser (arquivos .java)
+test-parser: parser
+	bash run_parser_tests.sh
 
-.PHONY: all test clean
+# Roda todos os testes do projeto
+test: test-scanner test-parser
+
+clean:
+	rm -f lex.yy.c parser.tab.c parser.tab.h parser unit_tests
+
+.PHONY: all test-scanner test-parser test clean
