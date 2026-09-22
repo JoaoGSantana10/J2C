@@ -1,39 +1,37 @@
 # **:checkered_flag:** Sprint 04
 
-Período: 00/00/2025 a 00/00/2025
+Período: 10/09/2026 a 16/09/2026
 
 ## Descrição
 
-> A descrição da Sprint deve conter um resumo do que o time se propôs a fazer.
+> Nesta Sprint, o time avançou para a segunda fase do compilador: a Análise Sintática. O objetivo foi construir o Parser do J2C e integrá-lo ao Scanner gerado na Sprint anterior, permitindo que a cadeia de tokens fosse processada e validada contra as regras gramaticais do subconjunto Java, com foco em estruturas de declaração e funções.
 > 
 
 ## Objetivos
 
-- Objetivo 1
-- Objetivo 2
+- Criar a estrutura principal do analisador sintático (parser.y).
+- Integrar o Scanner ao Parser para consumo sequencial de tokens (lex.yy.c, parser.tab.c e parser.tab.h).
+- Implementar as regras sintáticas para a declaração de variáveis e funções.
+- Adicionar o suporte gramatical ao token e comando de retorno (return).
 
 ## Reuniões
 
 ### Reunião 1
 
-**Data:** 00/00/2025  
-**Local:**  
-**Inicio:** 00:00  
-**Encerramento:** 00:00
+**Data:** 11/09/2026  
+**Local:** Discord 
+**Inicio:** 19:00  
+**Encerramento:** 20:00
 
 **Assuntos:**
 
-* Assunto 1
-* Assunto 2
+* Estratégia de integração entre o Flex e o Bison.
+* Desenho das regras de produção gramatical para as assinaturas de funções e variáveis.
+* Tratamento e resolução de conflitos iniciais de shift/reduce no arquivo do Parser.
 
 ## Finalização
 
-> A Sprint deve ser finalizada com um resumo do que realmente foi feito e quais tarefas foram postergadas para a próxima Sprint.
+> O Parser foi criado e integrado de forma bem-sucedida ao fluxo do compilador. As bases sintáticas foram consolidadas com a implementação das regras que validam declarações de variáveis, estruturação de funções e o comando return. Os artefatos C foram gerados corretamente, finalizando a integração Léxico-Sintática sem pendências.
 > 
 
 ---
-
-**Observações:**
-
-> Esse espaço deve ser utilizado para registrar qualquer observação que o time julgar pertinente.
->
