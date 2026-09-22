@@ -269,8 +269,10 @@ void yyerror(const char *s) {
 }
 
 int main(void) {
-    if (yyparse() == 0) {
+    int result = yyparse();
+    if (result == 0) {
         printf("Análise sintática concluída com sucesso!\n");
+        return 0; /* Código 0: Sucesso */
     }
-    return 0;
+    return 1;     /* Código 1: Erro de sintaxe */
 }
