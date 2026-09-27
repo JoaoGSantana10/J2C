@@ -131,6 +131,20 @@
     .member-card { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.5rem; }
     .member-avatar { width: 4.5rem; height: 4.5rem; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); margin-bottom: 0.25rem; }
     .member-card:hover .member-avatar { border-color: var(--primary); }
+    .sprint-card { cursor: pointer; }
+    .modal-overlay { display: none; position: fixed; inset: 0; z-index: 100; background: hsla(222, 47%, 4%, 0.85); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 1.5rem; }
+    .modal-overlay.open { display: flex; }
+    .modal-panel { position: relative; width: 100%; max-width: 42rem; max-height: 80vh; overflow-y: auto; background: var(--card); border: 1px solid var(--border); border-radius: 1rem; padding: 2rem; }
+    .modal-close { position: absolute; top: 1rem; right: 1rem; background: var(--secondary); border: 1px solid var(--border); color: var(--foreground); width: 2rem; height: 2rem; border-radius: 50%; font-size: 1.25rem; line-height: 1; cursor: pointer; }
+    .modal-body h1, .modal-body h2, .modal-body h3 { margin: 1.25rem 0 0.5rem; font-weight: 700; }
+    .modal-body h1 { font-size: 1.5rem; }
+    .modal-body h2 { font-size: 1.2rem; color: var(--primary); }
+    .modal-body h3 { font-size: 1rem; }
+    .modal-body p, .modal-body li { font-size: 0.9rem; color: var(--muted-foreground); line-height: 1.7; }
+    .modal-body ul, .modal-body ol { margin-left: 1.25rem; margin-bottom: 0.75rem; }
+    .modal-body strong { color: var(--foreground); }
+    .modal-body blockquote { border-left: 2px solid var(--primary); padding-left: 1rem; margin: 0.75rem 0; color: var(--muted-foreground); }
+    .modal-body hr { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
     .footer { border-top: 1px solid var(--border); background-color: hsla(222, 47%, 9%, 0.5); }
     .footer-content { padding: 3rem 0; }
     .footer-grid { display: grid; gap: 2rem; margin-bottom: 3rem; }
@@ -316,17 +330,26 @@
           <p class="section-subtitle">Acompanhe a evolução do compilador sprint a sprint</p>
         </div>
         <div class="topics-grid">
-          <article class="topic-card"><a href="Milestones/Sprint-00/sprint-00.md" class="topic-title">Sprint 00 →</a></article>
-          <article class="topic-card"><a href="Milestones/Sprint-01/sprint-01.md" class="topic-title">Sprint 01 →</a></article>
-          <article class="topic-card"><a href="Milestones/Sprint-02/sprint-02.md" class="topic-title">Sprint 02 →</a></article>
-          <article class="topic-card"><a href="Milestones/Sprint-03/sprint-03.md" class="topic-title">Sprint 03 →</a></article>
-          <article class="topic-card"><a href="Milestones/Sprint-04/sprint-04.md" class="topic-title">Sprint 04 →</a></article>
-          <article class="topic-card"><a href="Milestones/Sprint-05/sprint-05.md" class="topic-title">Sprint 05 →</a></article>
-          <article class="topic-card"><a href="Milestones/Sprint-06/sprint-06.md" class="topic-title">Sprint 06 →</a></article>
-          <article class="topic-card"><a href="Milestones/Sprint-07/sprint-07.md" class="topic-title">Sprint 07 →</a></article>
+          <article class="topic-card sprint-card" onclick="openSprint('00')"><span class="topic-title">Sprint 00 →</span></article>
+          <article class="topic-card sprint-card" onclick="openSprint('01')"><span class="topic-title">Sprint 01 →</span></article>
+          <article class="topic-card sprint-card" onclick="openSprint('02')"><span class="topic-title">Sprint 02 →</span></article>
+          <article class="topic-card sprint-card" onclick="openSprint('03')"><span class="topic-title">Sprint 03 →</span></article>
+          <article class="topic-card sprint-card" onclick="openSprint('04')"><span class="topic-title">Sprint 04 →</span></article>
+          <article class="topic-card sprint-card" onclick="openSprint('05')"><span class="topic-title">Sprint 05 →</span></article>
+          <article class="topic-card sprint-card" onclick="openSprint('06')"><span class="topic-title">Sprint 06 →</span></article>
+          <article class="topic-card sprint-card" onclick="openSprint('07')"><span class="topic-title">Sprint 07 →</span></article>
         </div>
       </div>
     </section>
+
+    <div id="sprint-modal" class="modal-overlay" onclick="if(event.target===this) closeSprint()">
+      <div class="modal-panel">
+        <button class="modal-close" onclick="closeSprint()" aria-label="Fechar">&times;</button>
+        <div id="sprint-modal-body" class="modal-body">
+          <p class="topic-text">Carregando...</p>
+        </div>
+      </div>
+    </div>
 
     <section id="equipe" class="contribute">
       <div class="container">
@@ -370,7 +393,7 @@
           <ul>
             <li><a href="#visao-geral">Arquitetura</a></li>
             <li><a href="#sprints">Sprints</a></li>
-            <li><a href="Milestones/sprint-template.md">Template de sprint</a></li>
+            <li><a href="https://github.com/JoaoGSantana10/J2C/blob/main/docs/Milestones/sprint-template.md" target="_blank">Template de sprint</a></li>
           </ul>
         </div>
         <div class="footer-section">
@@ -388,5 +411,44 @@
       </div>
     </div>
   </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+  <script>
+    const REPO_RAW = "https://raw.githubusercontent.com/JoaoGSantana10/J2C/main/docs/Milestones/";
+    const REPO_BLOB = "https://github.com/JoaoGSantana10/J2C/blob/main/docs/Milestones/";
+    const cache = {};
+
+    async function openSprint(n) {
+      const modal = document.getElementById('sprint-modal');
+      const body = document.getElementById('sprint-modal-body');
+      modal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+
+      if (cache[n]) { body.innerHTML = cache[n]; return; }
+
+      body.innerHTML = '<p class="topic-text">Carregando...</p>';
+      const path = `Sprint-${n}/sprint-${n}.md`;
+      try {
+        const res = await fetch(REPO_RAW + path);
+        if (!res.ok) throw new Error('not ok');
+        const md = await res.text();
+        const html = marked.parse(md);
+        cache[n] = html;
+        body.innerHTML = html;
+      } catch (e) {
+        body.innerHTML = `<p class="topic-text">Não foi possível carregar esse sprint aqui.
+          <a href="${REPO_BLOB}${path}" target="_blank" style="color: var(--primary);">Abrir no GitHub →</a></p>`;
+      }
+    }
+
+    function closeSprint() {
+      document.getElementById('sprint-modal').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeSprint();
+    });
+  </script>
 </body>
 </html>
