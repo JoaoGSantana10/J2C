@@ -12,6 +12,7 @@ void yyerror(const char *s);
 %define parse.error verbose
 
 /* Palavras-chave de tipo */
+%token KW_VOID
 %token KW_INT
 %token KW_DOUBLE
 %token KW_FLOAT
@@ -126,6 +127,7 @@ decl_variavel
 
 decl_funcao
     : tipo ID '(' parametros_opt ')' bloco
+    | KW_VOID ID'(' parametros_opt ')' bloco
 ;
 
 inc_dec

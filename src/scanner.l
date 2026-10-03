@@ -49,6 +49,7 @@ ALFANUM     [a-zA-Z_$0-9]
 ","         { return ','; }
 ":"         { return ':'; }
 
+"void"      { return KW_VOID;}
 "int"       { return KW_INT; }
 "double"    { return KW_DOUBLE; }
 "float"     { return KW_FLOAT; }
