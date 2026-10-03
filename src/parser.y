@@ -112,7 +112,11 @@ param
 lista_parametros
     : lista_parametros ',' param
     | param
-    | /* vazio */
+;
+
+parametros_opt
+    : /* vazio */
+    | lista_parametros
 ;
 
 decl_variavel
@@ -121,8 +125,14 @@ decl_variavel
 ;
 
 decl_funcao
-    : tipo ID '(' lista_parametros ')' bloco
+    : tipo ID '(' parametros_opt ')' bloco
 ;
+
+inc_dec
+    : OP_INC ID
+    | ID OP_INC
+    | OP_DEC ID
+    | ID OP_DEC
 
 bloco
     : '{' lista_comandos '}'
@@ -147,6 +157,7 @@ comando
     | comando_switch
     | KW_BREAK ';'
     | bloco
+    | inc_dec ';'
 ;
 
 atribuicao
@@ -162,11 +173,15 @@ argumento
 lista_argumentos
     : lista_argumentos ',' argumento
     | argumento
-    | /* vazio */
+;
+
+argumentos_opt
+    : /* vazio */
+    | lista_argumentos
 ;
 
 chamada_funcao
-    : ID '(' lista_argumentos ')'
+    : ID '(' argumentos_opt ')'
 ;
 
 comando_return
