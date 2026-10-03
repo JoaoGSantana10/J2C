@@ -1,0 +1,6 @@
+src/scanner
+src/parser
+src/parser.tab.h
+src/parser.tab.c
+src/unit_tests
+src/lex.yy.c
