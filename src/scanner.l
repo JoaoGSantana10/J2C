@@ -6,6 +6,7 @@
 int contLinha = 1;
 %}
 
+%option yylineno
 %option nounput noinput
 
 DIGITO      [0-9]
@@ -49,7 +50,12 @@ ALFANUM     [a-zA-Z_$0-9]
 ","         { return ','; }
 ":"         { return ':'; }
 
-"void"      { return KW_VOID;}
+"public"    { return KW_PUBLIC; }
+"class"     { return KW_CLASS; }
+"static"    { return KW_STATIC; }
+"private"   { return KW_PRIVATE; }
+"protected" { return KW_PROTECTED; }
+"void"      { return KW_VOID; }
 "int"       { return KW_INT; }
 "double"    { return KW_DOUBLE; }
 "float"     { return KW_FLOAT; }
@@ -64,6 +70,7 @@ ALFANUM     [a-zA-Z_$0-9]
 "switch"    { return KW_SWITCH; }
 "case"      { return KW_CASE; }
 "break"     { return KW_BREAK; }
+"continue"  { return KW_CONTINUE; }
 "default"   { return KW_DEFAULT; }
 "return"    { return KW_RETURN; }
 "true"      { return KW_TRUE; }
