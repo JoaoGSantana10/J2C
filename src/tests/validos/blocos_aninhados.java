@@ -1,0 +1,13 @@
+public class blocos_aninhados{
+    int testeEscopo() {
+        int x = 1;
+        {
+            int y = 2;
+            {
+                int z = x + y;
+                x = z;
+            }
+        }
+        return x;
+    }
+}
