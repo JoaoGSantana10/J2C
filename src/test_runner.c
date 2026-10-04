@@ -48,6 +48,12 @@ int main(void)
     run_test("Estrutura if", "if", KW_IF);
     run_test("Estrutura else", "else", KW_ELSE);
     run_test("Literal true", "true", KW_TRUE);
+    run_test("Modificador de acesso public", "public", KW_PUBLIC);
+    run_test("Modificador de acesso private", "private", KW_PRIVATE);
+    run_test("Modificador de acesso protected", "protected", KW_PROTECTED);
+    run_test("Modificador static", "static", KW_STATIC);
+    run_test("Declaração class", "class", KW_CLASS);
+    run_test("Identificador com prefixo de palavra-chave", "publico", ID);
 
     /* --- TESTES DE OPERADORES --- */
     run_test("Operador Soma", "+", '+');
