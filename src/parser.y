@@ -6,10 +6,18 @@
 
 int yylex(void);
 void yyerror(const char *s);
+extern int yylineno;
 %}
 
 /* Habilita mensagens de erro sintático detalhadas */
 %define parse.error verbose
+
+/* Palavras-chave de classe e modificadores */
+%token KW_PUBLIC
+%token KW_CLASS
+%token KW_STATIC
+%token KW_PRIVATE
+%token KW_PROTECTED
 
 /* Palavras-chave de tipo */
 %token KW_VOID
@@ -29,6 +37,7 @@ void yyerror(const char *s);
 %token KW_SWITCH 
 %token KW_CASE 
 %token KW_BREAK 
+%token KW_CONTINUE
 %token KW_DEFAULT
 %token KW_RETURN
 
@@ -76,14 +85,30 @@ void yyerror(const char *s);
 %%
 
 /* REGRAS GRAMATICAIS */
+
 programa
-    : programa declaracao
-    | declaracao
+    : KW_PUBLIC KW_CLASS ID '{' corpo_classe '}' 
+
+corpo_classe
+    : corpo_classe declaracao
+    | /* vazio */
 ;
 
 declaracao
-    : decl_variavel
-    | decl_funcao
+    : modificadores_opt decl_variavel
+    | modificadores_opt decl_funcao
+;
+
+modificador
+    : KW_PUBLIC
+    | KW_PRIVATE
+    | KW_PROTECTED
+    | KW_STATIC
+;
+
+modificadores_opt
+    : modificadores_opt modificador
+    | /* vazio */
 ;
 
 tipo
@@ -108,6 +133,7 @@ valor_literal
 
 param
     : tipo ID
+    | ID '[' ']' ID
 ; 
 
 lista_parametros
@@ -158,6 +184,7 @@ comando
     | comando_for
     | comando_switch
     | KW_BREAK ';'
+    | KW_CONTINUE ';'
     | bloco
     | inc_dec ';'
 ;
@@ -282,7 +309,7 @@ expressao
 /* Código C auxiliar */
 
 void yyerror(const char *s) {
-    fprintf(stderr, "Erro de sintaxe: %s\n", s);
+    fprintf(stderr, "Erro de sintaxe: %s perto da linha %d\n", s, yylineno);
 }
 
 int main(void) {
