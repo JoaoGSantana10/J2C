@@ -75,6 +75,7 @@ ALFANUM     [a-zA-Z_$0-9]
 "return"    { return KW_RETURN; }
 "true"      { return KW_TRUE; }
 "false"     { return KW_FALSE; }
+"new"       { return KW_NEW; }
 
 {DIGITO}+                   { return LIT_INT; }
 {DIGITO}+"."{DIGITO}+       { return LIT_DOUBLE; }

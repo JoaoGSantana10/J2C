@@ -19,6 +19,9 @@ extern int yylineno;
 %token KW_PRIVATE
 %token KW_PROTECTED
 
+/* Operador de Criação de Objetos */
+%token KW_NEW
+
 /* Palavras-chave de tipo */
 %token KW_VOID
 %token KW_INT
@@ -118,6 +121,7 @@ tipo
     | KW_BOOLEAN 
     | KW_CHAR 
     | KW_LONG
+    | ID
 ;
 
 valor_literal
@@ -210,7 +214,12 @@ argumentos_opt
 ;
 
 chamada_funcao
-    : ID '(' argumentos_opt ')'
+    : nome_qualificado '(' argumentos_opt ')'
+;
+
+nome_qualificado
+    : nome_qualificado '.' ID
+    | ID
 ;
 
 comando_return
@@ -302,6 +311,7 @@ expressao
     | ID
     | valor_literal
     | chamada_funcao
+    | KW_NEW ID '(' nome_qualificado ')'
 ;
 
 %%
