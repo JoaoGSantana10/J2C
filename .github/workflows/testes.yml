@@ -1,0 +1,28 @@
+name: Executar Testes do Compilador
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar o código do repositório
+        uses: actions/checkout@v4
+
+      - name: Instalar dependências (Flex, Bison, GCC e Make)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flex bison build-essential
+
+      - name: Garantir permissão de execução no script de testes
+        run: chmod +x run_parser_tests.sh
+
+      - name: Compilar o projeto
+        run: make
+
+      - name: Executar os testes
+        run: ./run_parser_tests.sh
