@@ -9,6 +9,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: src
+
     steps:
       - name: Baixar o código do repositório
         uses: actions/checkout@v4
@@ -25,4 +29,4 @@ jobs:
         run: make
 
       - name: Executar os testes
-        run: ../src/run_parser_tests.sh
+        run: make test
