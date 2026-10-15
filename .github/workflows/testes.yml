@@ -25,4 +25,4 @@ jobs:
         run: make
 
       - name: Executar os testes
-        run: ./run_parser_tests.sh
+        run: ./src/run_parser_tests.sh
