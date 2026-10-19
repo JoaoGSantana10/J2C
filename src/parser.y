@@ -328,7 +328,10 @@ int main(void) {
     int result = yyparse();
 
     if (contErroLex > 0) {
-        fprintf(stderr, "Foram encontrados %d erro léxico\n", contErroLex);
+        fprintf(stderr, "%s %d %s\n",
+        (contErroLex == 1) ? "Foi encontrado" : "Foram encontrados",
+        contErroLex,
+        (contErroLex == 1) ? "erro léxico" : "erros léxicos");
         return 1;
     }
 

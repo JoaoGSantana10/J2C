@@ -80,6 +80,7 @@ ALFANUM     [a-zA-Z_$0-9]
 
 {DIGITO}+                   { return LIT_INT; }
 {DIGITO}+"."{DIGITO}+[Dd]   { return LIT_DOUBLE; }
+{DIGITO}+"."{DIGITO}+       { return LIT_DOUBLE; }
 {DIGITO}+"."{DIGITO}+[Ff]   { return LIT_FLOAT; }
 {DIGITO}+[Ll]               { return LIT_LONG; }
 {DIGITO}+[Dd]               { return LIT_DOUBLE; }
@@ -89,8 +90,7 @@ ALFANUM     [a-zA-Z_$0-9]
 
 {LETRA}{ALFANUM}*           { return ID; }
 
-.                           { printf("Erro léxico na linha %d: caractere inesperado '%s'\n", yylineno, yytext); contErroLex++; }
-
+.   { fprintf(stderr, "Erro léxico na linha %d: caractere inesperado '%s'\n", yylineno, yytext); contErroLex++; }
 %%
 
 int yywrap(void) {
