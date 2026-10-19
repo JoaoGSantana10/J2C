@@ -15,6 +15,8 @@ typedef enum
 typedef enum
 {
     TIPO_INT,
+    TIPO_LONG,
+    TIPO_FLOAT,
     TIPO_DOUBLE,
     TIPO_BOOLEAN,
     TIPO_CHAR,
