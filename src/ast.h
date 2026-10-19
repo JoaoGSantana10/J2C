@@ -6,8 +6,19 @@
 
 typedef enum {
     NODE_PROGRAM,
-    NODE_CLASS
+    NODE_CLASS,
+    NODE_VAR_DECL,
+    NODE_FUNC_DECL,
+    NODE_PARAM
 } NodeType;
+
+typedef enum {
+    MOD_NONE      = 0,
+    MOD_PUBLIC    = 1 << 0,
+    MOD_PRIVATE   = 1 << 1,
+    MOD_PROTECTED = 1 << 2,
+    MOD_STATIC    = 1 << 3
+} ModifierFlags;
 
 typedef struct ASTNode ASTNode;
 
@@ -23,9 +34,31 @@ struct ASTNode {
         } program;
 
         struct {
+            int modifiers;
             char *name;
             ASTNode *members;
         } class_decl;
+
+        struct {
+            int modifiers;
+            char *type_name;
+            char *name;
+            ASTNode *init;
+        } var_decl;
+
+        struct {
+            int modifiers;
+            char *return_type;
+            char *name;
+            ASTNode *params;
+            ASTNode *body;
+        } func_decl;
+
+        struct {
+            char *type_name;
+            char *name;
+            int is_array;
+        } param;
     };
 };
 
