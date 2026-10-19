@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TAM_TABELA 211
+#define TAM_TABELA 211 /* primo, bom para espalhar o hash */
 
 struct Tabela
 {
@@ -19,7 +19,7 @@ static unsigned long hash_djb2(const char *s)
     unsigned long h = 5381;
     int c;
     while ((c = (unsigned char)*s++))
-        h = ((h << 5) + h) + c; /* h = (h*32) + h */
+        h = ((h << 5) + h) + c;
     return h;
 }
 
@@ -179,6 +179,12 @@ const char *tipo_str(Tipo t)
     {
     case TIPO_INT:
         base = "int";
+        break;
+    case TIPO_LONG:
+        base = "long";
+        break;
+    case TIPO_FLOAT:
+        base = "float";
         break;
     case TIPO_DOUBLE:
         base = "double";
