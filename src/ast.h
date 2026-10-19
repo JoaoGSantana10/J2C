@@ -12,7 +12,11 @@ typedef enum {
     NODE_PARAM,
     NODE_BLOCK,
     NODE_ASSIGN,
-    NODE_EXPR_STMT
+    NODE_EXPR_STMT,
+    NODE_IF,
+    NODE_WHILE,
+    NODE_DO_WHILE,
+    NODE_FOR
 } NodeType;
 
 typedef enum {
@@ -76,6 +80,29 @@ struct ASTNode {
         struct {
             ASTNode *expr;
         } expr_stmt;
+
+        struct {
+            ASTNode *condition;
+            ASTNode *then_branch;
+            ASTNode *else_branch;
+        } if_stmt;
+
+        struct {
+            ASTNode *condition;
+            ASTNode *body;
+        } while_stmt;
+
+        struct {
+            ASTNode *body;
+            ASTNode *condition;
+        } do_while_stmt;
+
+        struct {
+            ASTNode *init;
+            ASTNode *condition;
+            ASTNode *increment;
+            ASTNode *body;
+        } for_stmt;
     };
 };
 
