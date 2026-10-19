@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "parser.tab.h"
 
-int contLinha = 1;
+int contErroLex = 0;
 %}
 
 %option yylineno
@@ -15,8 +15,9 @@ ALFANUM     [a-zA-Z_$0-9]
 
 %%
 
-"\n"        { contLinha++; }
-[ \t\r]+    { /* Ignora espacos em branco */ }
+[ \t\r\n]+    { /* Ignora espacos em branco */ }
+"//".*        { /* comentários */ }
+"/*"([^*]|"*"+[^/*])*"*"+"/" { /* Comentários em bloco */}
 
 "=="        { return OP_IGUAL; }
 "!="        { return OP_DIFERENTE; }
@@ -78,15 +79,17 @@ ALFANUM     [a-zA-Z_$0-9]
 "new"       { return KW_NEW; }
 
 {DIGITO}+                   { return LIT_INT; }
-{DIGITO}+"."{DIGITO}+       { return LIT_DOUBLE; }
+{DIGITO}+"."{DIGITO}+[Dd]   { return LIT_DOUBLE; }
 {DIGITO}+"."{DIGITO}+[Ff]   { return LIT_FLOAT; }
 {DIGITO}+[Ll]               { return LIT_LONG; }
+{DIGITO}+[Dd]               { return LIT_DOUBLE; }
+{DIGITO}+[Ff]               { return LIT_FLOAT;}
 "'"."'"                     { return LIT_CHAR; }
-\".*\"                      { return LIT_STRING; }
+\"[^"\n]*\"                 { return LIT_STRING; }
 
 {LETRA}{ALFANUM}*           { return ID; }
 
-.                           { printf("Erro lexico na linha %d: caractere inesperado '%s'\n", contLinha, yytext); }
+.                           { printf("Erro léxico na linha %d: caractere inesperado '%s'\n", yylineno, yytext); contErroLex++; }
 
 %%
 
