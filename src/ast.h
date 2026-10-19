@@ -16,7 +16,13 @@ typedef enum {
     NODE_IF,
     NODE_WHILE,
     NODE_DO_WHILE,
-    NODE_FOR
+    NODE_FOR,
+    NODE_SWITCH,
+    NODE_CASE,
+    NODE_DEFAULT,
+    NODE_RETURN,
+    NODE_BREAK,
+    NODE_CONTINUE
 } NodeType;
 
 typedef enum {
@@ -103,6 +109,24 @@ struct ASTNode {
             ASTNode *increment;
             ASTNode *body;
         } for_stmt;
+
+        struct {
+            ASTNode *expr;
+            ASTNode *cases;
+        } switch_stmt;
+
+        struct {
+            ASTNode *value;
+            ASTNode *statements;
+        } case_stmt;
+
+        struct {
+            ASTNode *statements;
+        } default_stmt;
+
+        struct {
+            ASTNode *expr;
+        } return_stmt;
     };
 };
 
