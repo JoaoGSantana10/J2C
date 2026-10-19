@@ -172,4 +172,42 @@ struct ASTNode {
     };
 };
 
+/* Funcoes base e listas */
+ASTNode* ast_create_node(NodeType type, int lineno);
+ASTNode* ast_append(ASTNode *list, ASTNode *item);
+
+/* Construtores de programa e declaracoes */
+ASTNode* ast_create_program(char *name, ASTNode *body, int lineno);
+ASTNode* ast_create_class(int modifiers, char *name, ASTNode *members, int lineno);
+ASTNode* ast_create_var_decl(int modifiers, char *type_name, char *name, ASTNode *init, int lineno);
+ASTNode* ast_create_func_decl(int modifiers, char *return_type, char *name, ASTNode *params, ASTNode *body, int lineno);
+ASTNode* ast_create_param(char *type_name, char *name, int is_array, int lineno);
+
+/* Construtores de comandos */
+ASTNode* ast_create_block(ASTNode *statements, int lineno);
+ASTNode* ast_create_assign(int op, char *var_name, ASTNode *expr, int lineno);
+ASTNode* ast_create_expr_stmt(ASTNode *expr, int lineno);
+ASTNode* ast_create_if(ASTNode *condition, ASTNode *then_branch, ASTNode *else_branch, int lineno);
+ASTNode* ast_create_while(ASTNode *condition, ASTNode *body, int lineno);
+ASTNode* ast_create_do_while(ASTNode *body, ASTNode *condition, int lineno);
+ASTNode* ast_create_for(ASTNode *init, ASTNode *condition, ASTNode *increment, ASTNode *body, int lineno);
+ASTNode* ast_create_switch(ASTNode *expr, ASTNode *cases, int lineno);
+ASTNode* ast_create_case(ASTNode *value, ASTNode *statements, int lineno);
+ASTNode* ast_create_default(ASTNode *statements, int lineno);
+ASTNode* ast_create_return(ASTNode *expr, int lineno);
+ASTNode* ast_create_break(int lineno);
+ASTNode* ast_create_continue(int lineno);
+
+/* Construtores de expressoes */
+ASTNode* ast_create_bin_op(int op, ASTNode *left, ASTNode *right, int lineno);
+ASTNode* ast_create_unary_op(int op, int is_postfix, ASTNode *operand, int lineno);
+ASTNode* ast_create_call(char *func_name, ASTNode *args, int lineno);
+ASTNode* ast_create_new(char *class_name, char *arg_name, int lineno);
+ASTNode* ast_create_identifier(char *name, int lineno);
+ASTNode* ast_create_literal(NodeType type, char *value, int lineno);
+
+/* Impressao e liberacao de memoria */
+void ast_print(const ASTNode *node, int indent);
+void ast_free(ASTNode *node);
+
 #endif
