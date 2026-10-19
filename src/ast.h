@@ -9,7 +9,10 @@ typedef enum {
     NODE_CLASS,
     NODE_VAR_DECL,
     NODE_FUNC_DECL,
-    NODE_PARAM
+    NODE_PARAM,
+    NODE_BLOCK,
+    NODE_ASSIGN,
+    NODE_EXPR_STMT
 } NodeType;
 
 typedef enum {
@@ -59,6 +62,20 @@ struct ASTNode {
             char *name;
             int is_array;
         } param;
+
+        struct {
+            ASTNode *statements;
+        } block;
+
+        struct {
+            int op;
+            char *var_name;
+            ASTNode *expr;
+        } assign;
+
+        struct {
+            ASTNode *expr;
+        } expr_stmt;
     };
 };
 
