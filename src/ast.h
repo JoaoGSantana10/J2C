@@ -22,7 +22,12 @@ typedef enum {
     NODE_DEFAULT,
     NODE_RETURN,
     NODE_BREAK,
-    NODE_CONTINUE
+    NODE_CONTINUE,
+    NODE_BIN_OP,
+    NODE_UNARY_OP,
+    NODE_CALL,
+    NODE_NEW,
+    NODE_IDENTIFIER
 } NodeType;
 
 typedef enum {
@@ -127,6 +132,32 @@ struct ASTNode {
         struct {
             ASTNode *expr;
         } return_stmt;
+
+        struct {
+            int op;
+            ASTNode *left;
+            ASTNode *right;
+        } bin_op;
+
+        struct {
+            int op;
+            int is_postfix;
+            ASTNode *operand;
+        } unary_op;
+
+        struct {
+            char *func_name;
+            ASTNode *args;
+        } call;
+
+        struct {
+            char *class_name;
+            char *arg_name;
+        } new_expr;
+
+        struct {
+            char *name;
+        } identifier;
     };
 };
 
