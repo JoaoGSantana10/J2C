@@ -7,6 +7,7 @@
 int yylex(void);
 void yyerror(const char *s);
 extern int yylineno;
+extern int contErroLex;
 %}
 
 /* Habilita mensagens de erro sintático detalhadas */
@@ -73,17 +74,16 @@ extern int yylineno;
 
 /* PRECEDÊNCIA E ASSOCIAÇÃO DE OPERADORES */
 
-%nonassoc LOWER_THAN_ELSE
-%nonassoc KW_ELSE
+%precedence LOWER_THAN_ELSE
+%precedence KW_ELSE
 
-%right '=' OP_PLUS_ASSIGN OP_MINUS_ASSIGN
 %left OP_OR
 %left OP_AND
 %left OP_IGUAL OP_DIFERENTE
 %left '<' '>' OP_MAIOR_IGUAL OP_MENOR_IGUAL
 %left '+' '-'
 %left '*' '/' '%'
-%right OP_INC OP_DEC '!' UMINUS
+%precedence '!' UMINUS
 
 %%
 
@@ -95,7 +95,7 @@ programa
 
 corpo_classe
     : corpo_classe declaracao
-    | /* vazio */
+    | %empty
 ;
 
 declaracao
@@ -112,7 +112,7 @@ modificador
 
 modificadores_opt
     : modificadores_opt modificador
-    | /* vazio */
+    | %empty
 ;
 
 tipo
@@ -147,7 +147,7 @@ lista_parametros
 ;
 
 parametros_opt
-    : /* vazio */
+    : %empty
     | lista_parametros
 ;
 
@@ -174,7 +174,7 @@ bloco
 
 lista_comandos
     : lista_comandos comando
-    | /* vazio */
+    | %empty
 ;
 
 /* COMANDOS */
@@ -211,7 +211,7 @@ lista_argumentos
 ;
 
 argumentos_opt
-    : /* vazio */
+    : %empty
     | lista_argumentos
 ;
 
@@ -251,18 +251,18 @@ comando_for
 init_for
     : tipo ID '=' expressao
     | atribuicao
-    | /* vazio */
+    | %empty
 ;
 
 expressao_opt
     : expressao
-    | /* vazio */
+    | %empty
 ;
 
 pos_for
     : atribuicao
     | expressao
-    | /* vazio */
+    | %empty
 ;
 
 comando_switch
@@ -276,7 +276,7 @@ secao_cases
 
 lista_cases
     : lista_cases elemento_case
-    | /* vazio */
+    | %empty
 ;
 
 elemento_case
@@ -326,6 +326,12 @@ void yyerror(const char *s) {
 
 int main(void) {
     int result = yyparse();
+
+    if (contErroLex > 0) {
+        fprintf(stderr, "Foram encontrados %d erro léxico\n", contErroLex);
+        return 1;
+    }
+
     if (result == 0) {
         printf("Análise sintática concluída com sucesso!\n");
         return 0; /* Código 0: Sucesso */
