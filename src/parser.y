@@ -91,6 +91,7 @@ extern int yylineno;
 
 programa
     : KW_PUBLIC KW_CLASS ID '{' corpo_classe '}' 
+;
 
 corpo_classe
     : corpo_classe declaracao
@@ -165,6 +166,7 @@ inc_dec
     | ID OP_INC
     | OP_DEC ID
     | ID OP_DEC
+;
 
 bloco
     : '{' lista_comandos '}'
