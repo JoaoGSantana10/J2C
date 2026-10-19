@@ -27,7 +27,14 @@ typedef enum {
     NODE_UNARY_OP,
     NODE_CALL,
     NODE_NEW,
-    NODE_IDENTIFIER
+    NODE_IDENTIFIER,
+    NODE_LITERAL_INT,
+    NODE_LITERAL_DOUBLE,
+    NODE_LITERAL_FLOAT,
+    NODE_LITERAL_LONG,
+    NODE_LITERAL_CHAR,
+    NODE_LITERAL_STRING,
+    NODE_LITERAL_BOOL
 } NodeType;
 
 typedef enum {
@@ -158,6 +165,10 @@ struct ASTNode {
         struct {
             char *name;
         } identifier;
+
+        struct {
+            char *value;
+        } literal;
     };
 };
 
