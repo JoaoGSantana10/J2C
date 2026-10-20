@@ -317,12 +317,10 @@ void ast_print(const ASTNode *node, int indent) {
                 ast_print(node->switch_stmt.cases, indent + 1);
                 break;
             case NODE_CASE:
-                printf("Case (linha %d)\n", node->lineno);
-                if (node->case_stmt.value) {
-                    print_indent(indent + 1);
-                    printf("Value:\n");
-                    ast_print(node->case_stmt.value, indent + 2);
-                }
+                printf("Case (linha %d)\n", node->lineno);    
+                print_indent(indent + 1);
+                printf("Value:\n");
+                ast_print(node->case_stmt.value, indent + 2);
                 ast_print(node->case_stmt.statements, indent + 1);
                 break;
             case NODE_DEFAULT:
