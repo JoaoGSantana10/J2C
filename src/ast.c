@@ -1,12 +1,14 @@
 #include "ast.h"
 #include <string.h>
 
-static char* safe_strdup(const char *s) {
+char* ast_safe_strdup(const char *s) {
     if (!s) return NULL;
     char *copy = malloc(strlen(s) + 1);
-    if (copy) {
-        strcpy(copy, s);
+    if (!copy) {
+        fprintf(stderr, "Falha ao tentar alocar uma String\n");
+        exit(EXIT_FAILURE);
     }
+    strcpy(copy, s);
     return copy;
 }
 
@@ -36,7 +38,7 @@ ASTNode* ast_append(ASTNode *list, ASTNode *item) {
 
 ASTNode* ast_create_program(char *name, ASTNode *body, int lineno) {
     ASTNode *node = ast_create_node(NODE_PROGRAM, lineno);
-    node->program.name = safe_strdup(name);
+    node->program.name = name;
     node->program.body = body;
     return node;
 }
@@ -44,7 +46,7 @@ ASTNode* ast_create_program(char *name, ASTNode *body, int lineno) {
 ASTNode* ast_create_class(int modifiers, char *name, ASTNode *members, int lineno) {
     ASTNode *node = ast_create_node(NODE_CLASS, lineno);
     node->class_decl.modifiers = modifiers;
-    node->class_decl.name = safe_strdup(name);
+    node->class_decl.name = name;
     node->class_decl.members = members;
     return node;
 }
@@ -52,8 +54,8 @@ ASTNode* ast_create_class(int modifiers, char *name, ASTNode *members, int linen
 ASTNode* ast_create_var_decl(int modifiers, char *type_name, char *name, ASTNode *init, int lineno) {
     ASTNode *node = ast_create_node(NODE_VAR_DECL, lineno);
     node->var_decl.modifiers = modifiers;
-    node->var_decl.type_name = safe_strdup(type_name);
-    node->var_decl.name = safe_strdup(name);
+    node->var_decl.type_name = type_name;
+    node->var_decl.name = name;
     node->var_decl.init = init;
     return node;
 }
@@ -61,8 +63,8 @@ ASTNode* ast_create_var_decl(int modifiers, char *type_name, char *name, ASTNode
 ASTNode* ast_create_func_decl(int modifiers, char *return_type, char *name, ASTNode *params, ASTNode *body, int lineno) {
     ASTNode *node = ast_create_node(NODE_FUNC_DECL, lineno);
     node->func_decl.modifiers = modifiers;
-    node->func_decl.return_type = safe_strdup(return_type);
-    node->func_decl.name = safe_strdup(name);
+    node->func_decl.return_type = return_type;
+    node->func_decl.name = name;
     node->func_decl.params = params;
     node->func_decl.body = body;
     return node;
@@ -70,8 +72,8 @@ ASTNode* ast_create_func_decl(int modifiers, char *return_type, char *name, ASTN
 
 ASTNode* ast_create_param(char *type_name, char *name, int is_array, int lineno) {
     ASTNode *node = ast_create_node(NODE_PARAM, lineno);
-    node->param.type_name = safe_strdup(type_name);
-    node->param.name = safe_strdup(name);
+    node->param.type_name = type_name;
+    node->param.name = name;
     node->param.is_array = is_array;
     return node;
 }
@@ -85,7 +87,7 @@ ASTNode* ast_create_block(ASTNode *statements, int lineno) {
 ASTNode* ast_create_assign(int op, char *var_name, ASTNode *expr, int lineno) {
     ASTNode *node = ast_create_node(NODE_ASSIGN, lineno);
     node->assign.op = op;
-    node->assign.var_name = safe_strdup(var_name);
+    node->assign.var_name = var_name;
     node->assign.expr = expr;
     return node;
 }
@@ -179,27 +181,27 @@ ASTNode* ast_create_unary_op(int op, int is_postfix, ASTNode *operand, int linen
 
 ASTNode* ast_create_call(char *func_name, ASTNode *args, int lineno) {
     ASTNode *node = ast_create_node(NODE_CALL, lineno);
-    node->call.func_name = safe_strdup(func_name);
+    node->call.func_name = func_name;
     node->call.args = args;
     return node;
 }
 
 ASTNode* ast_create_new(char *class_name, char *arg_name, int lineno) {
     ASTNode *node = ast_create_node(NODE_NEW, lineno);
-    node->new_expr.class_name = safe_strdup(class_name);
-    node->new_expr.arg_name = safe_strdup(arg_name);
+    node->new_expr.class_name = class_name;
+    node->new_expr.arg_name = arg_name;
     return node;
 }
 
 ASTNode* ast_create_identifier(char *name, int lineno) {
     ASTNode *node = ast_create_node(NODE_IDENTIFIER, lineno);
-    node->identifier.name = safe_strdup(name);
+    node->identifier.name = name;
     return node;
 }
 
 ASTNode* ast_create_literal(NodeType type, char *value, int lineno) {
     ASTNode *node = ast_create_node(type, lineno);
-    node->literal.value = safe_strdup(value);
+    node->literal.value = value;
     return node;
 }
 

@@ -1,6 +1,15 @@
 #ifndef AST_H
 #define AST_H
 
+/* 
+ * Regra de posse das strings:
+ * - Toda string passada a um construtor ast_create_* deve ser alocada dinamicamente com ast_safe_strdup()
+ *   (dica: qual função usar para isso?).
+ * - Depois de passada, a string pertence ao nó e é liberada pelo ast_free.
+ *   Quem chamou não deve free na string nem usá-la após depois.
+ * - Nunca passar a mesma string para dois construtores diferentes.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -175,6 +184,7 @@ struct ASTNode {
 /* Funcoes base e listas */
 ASTNode* ast_create_node(NodeType type, int lineno);
 ASTNode* ast_append(ASTNode *list, ASTNode *item);
+char* ast_safe_strdup(const char *s);
 
 /* Construtores de programa e declaracoes */
 ASTNode* ast_create_program(char *name, ASTNode *body, int lineno);
