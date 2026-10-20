@@ -63,7 +63,6 @@ struct ASTNode {
 
     union {
         struct {
-            char *name;
             ASTNode *body;
         } program;
 
@@ -187,7 +186,7 @@ ASTNode* ast_append(ASTNode *list, ASTNode *item);
 char* ast_safe_strdup(const char *s);
 
 /* Construtores de programa e declaracoes */
-ASTNode* ast_create_program(char *name, ASTNode *body, int lineno);
+ASTNode* ast_create_program(ASTNode *body, int lineno);
 ASTNode* ast_create_class(int modifiers, char *name, ASTNode *members, int lineno);
 ASTNode* ast_create_var_decl(int modifiers, char *type_name, char *name, ASTNode *init, int lineno);
 ASTNode* ast_create_func_decl(int modifiers, char *return_type, char *name, ASTNode *params, ASTNode *body, int lineno);

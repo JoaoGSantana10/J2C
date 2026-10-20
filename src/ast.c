@@ -36,9 +36,8 @@ ASTNode* ast_append(ASTNode *list, ASTNode *item) {
     return list;
 }
 
-ASTNode* ast_create_program(char *name, ASTNode *body, int lineno) {
+ASTNode* ast_create_program(ASTNode *body, int lineno) {
     ASTNode *node = ast_create_node(NODE_PROGRAM, lineno);
-    node->program.name = name;
     node->program.body = body;
     return node;
 }
@@ -216,7 +215,7 @@ void ast_print(const ASTNode *node, int indent) {
         print_indent(indent);
         switch (node->type) {
             case NODE_PROGRAM:
-                printf("Program: %s (linha %d)\n", node->program.name, node->lineno);
+                printf("Program (linha %d)\n", node->lineno);
                 ast_print(node->program.body, indent + 1);
                 break;
             case NODE_CLASS:
@@ -383,7 +382,6 @@ void ast_free(ASTNode *node) {
 
         switch (node->type) {
             case NODE_PROGRAM:
-                free(node->program.name);
                 ast_free(node->program.body);
                 break;
             case NODE_CLASS:
