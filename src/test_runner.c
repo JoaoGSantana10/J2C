@@ -8,7 +8,7 @@ typedef struct yy_buffer_state *YY_BUFFER_STATE;
 extern YY_BUFFER_STATE yy_scan_string(const char *str);
 extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
 extern int yylex(void);
-extern int contLinha;
+extern int yylineno; /* Variável que mantém o número da linha atual */
 
 int total_tests = 0;
 int passed_tests = 0;
@@ -17,7 +17,7 @@ int passed_tests = 0;
 void run_test(const char *test_name, const char *input, int expected_token)
 {
     total_tests++;
-    contLinha = 1;
+    yylineno = 1; // Reinicia o número da linha para cada teste
 
     // Envia a string para o scanner do Flex analisar
     YY_BUFFER_STATE state = yy_scan_string(input);
