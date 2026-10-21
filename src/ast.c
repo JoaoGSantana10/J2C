@@ -83,7 +83,7 @@ ASTNode* ast_create_block(ASTNode *statements, int lineno) {
     return node;
 }
 
-ASTNode* ast_create_assign(int op, char *var_name, ASTNode *expr, int lineno) {
+ASTNode* ast_create_assign(AssignOpType op, char *var_name, ASTNode *expr, int lineno) {
     ASTNode *node = ast_create_node(NODE_ASSIGN, lineno);
     node->assign.op = op;
     node->assign.var_name = var_name;
@@ -162,7 +162,7 @@ ASTNode* ast_create_continue(int lineno) {
     return ast_create_node(NODE_CONTINUE, lineno);
 }
 
-ASTNode* ast_create_bin_op(int op, ASTNode *left, ASTNode *right, int lineno) {
+ASTNode* ast_create_bin_op(BinaryOpType op, ASTNode *left, ASTNode *right, int lineno) {
     ASTNode *node = ast_create_node(NODE_BIN_OP, lineno);
     node->bin_op.op = op;
     node->bin_op.left = left;
@@ -170,7 +170,7 @@ ASTNode* ast_create_bin_op(int op, ASTNode *left, ASTNode *right, int lineno) {
     return node;
 }
 
-ASTNode* ast_create_unary_op(int op, int is_postfix, ASTNode *operand, int lineno) {
+ASTNode* ast_create_unary_op(UnaryOpType op, int is_postfix, ASTNode *operand, int lineno) {
     ASTNode *node = ast_create_node(NODE_UNARY_OP, lineno);
     node->unary_op.op = op;
     node->unary_op.is_postfix = is_postfix;
@@ -256,6 +256,16 @@ void ast_print(const ASTNode *node, int indent) {
                 printf("ExprStmt (linha %d)\n", node->lineno);
                 ast_print(node->expr_stmt.expr, indent + 1);
                 break;
+                /*
+                    * Decisao sobre ++ e --:
+                    * - Sempre representados por um no NODE_UNARY_OP, com op = AST_UN_INC ou AST_UN_DEC,
+                    *   is_postfix indicando se o operador vem depois da variavel, e o operand
+                    *   sendo um no NODE_INDENTIFIER.
+                    * - Quando usados como comando (ex.: "i++;"), o no fica embrulhado em um
+                    *   NODE_EXPR_STMT, assim como as chamadas de funcao usadas como comando.
+                    * - Nao foi criado um no separado porque, como comando, ele não guarda
+                    *   nenhuma informação a mais (o valor da expressao e apenas descartado).
+                */
             case NODE_IF:
                 printf("If (linha %d)\n", node->lineno);
                 print_indent(indent + 1);

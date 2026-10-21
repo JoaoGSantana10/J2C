@@ -54,6 +54,35 @@ typedef enum {
     MOD_STATIC    = 1 << 3
 } ModifierFlags;
 
+typedef enum{
+    AST_OP_ADD /* '+' */,
+    AST_OP_SUB /* '-' */,
+    AST_OP_MUL /* '*' */,
+    AST_OP_DIV /* '/' */,
+    AST_OP_MOD /* '%' */,
+    AST_OP_EQ  /* '==' */,
+    AST_OP_NE  /* '!=' */,
+    AST_OP_LT  /* '<' */,
+    AST_OP_GT  /* '>' */,
+    AST_OP_LE  /* '<=' */,
+    AST_OP_GE  /* '>=' */,
+    AST_OP_AND /* '&&' */,
+    AST_OP_OR  /* '||' */,
+} BinaryOpType;
+
+typedef enum{
+    AST_UN_INC /* '++' */,
+    AST_UN_DEC /* '--' */,
+    AST_UN_NEG /* '-' */,
+    AST_UN_NOT /* '!' */,
+} UnaryOpType;
+
+typedef enum{
+    AST_ASG_ASSIGN /* '=' */,
+    AST_ASG_PLUS_ASSIGN /* '+=' */,
+    AST_ASG_MINUS_ASSIGN /* '-=' */,
+} AssignOpType;
+
 typedef struct ASTNode ASTNode;
 
 struct ASTNode {
@@ -98,7 +127,7 @@ struct ASTNode {
         } block;
 
         struct {
-            int op;
+            AssignOpType op;
             char *var_name;
             ASTNode *expr;
         } assign;
@@ -149,13 +178,13 @@ struct ASTNode {
         } return_stmt;
 
         struct {
-            int op;
+            BinaryOpType op;
             ASTNode *left;
             ASTNode *right;
         } bin_op;
 
         struct {
-            int op;
+            UnaryOpType op;
             int is_postfix;
             ASTNode *operand;
         } unary_op;
@@ -194,7 +223,7 @@ ASTNode* ast_create_param(char *type_name, char *name, int is_array, int lineno)
 
 /* Construtores de comandos */
 ASTNode* ast_create_block(ASTNode *statements, int lineno);
-ASTNode* ast_create_assign(int op, char *var_name, ASTNode *expr, int lineno);
+ASTNode* ast_create_assign(AssignOpType op, char *var_name, ASTNode *expr, int lineno);
 ASTNode* ast_create_expr_stmt(ASTNode *expr, int lineno);
 ASTNode* ast_create_if(ASTNode *condition, ASTNode *then_branch, ASTNode *else_branch, int lineno);
 ASTNode* ast_create_while(ASTNode *condition, ASTNode *body, int lineno);
@@ -208,8 +237,8 @@ ASTNode* ast_create_break(int lineno);
 ASTNode* ast_create_continue(int lineno);
 
 /* Construtores de expressoes */
-ASTNode* ast_create_bin_op(int op, ASTNode *left, ASTNode *right, int lineno);
-ASTNode* ast_create_unary_op(int op, int is_postfix, ASTNode *operand, int lineno);
+ASTNode* ast_create_bin_op(BinaryOpType op, ASTNode *left, ASTNode *right, int lineno);
+ASTNode* ast_create_unary_op(UnaryOpType op, int is_postfix, ASTNode *operand, int lineno);
 ASTNode* ast_create_call(char *func_name, ASTNode *args, int lineno);
 ASTNode* ast_create_new(char *class_name, char *arg_name, int lineno);
 ASTNode* ast_create_identifier(char *name, int lineno);
