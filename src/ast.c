@@ -12,6 +12,35 @@ char* ast_safe_strdup(const char *s) {
     return copy;
 }
 
+// Assumi a posse dos dois pedaços e os libera
+char* ast_join_qualified(char *left, char *right) {
+    size_t len = strlen(left) + 1 + strlen(right) + 1;
+    char *joined = malloc(len);
+    if (!joined) {
+        fprintf(stderr, "Falha ao tentar montar um nome qualificado\n");
+        exit(EXIT_FAILURE);
+    }
+    strcpy(joined,left );
+    strcat(joined, ".");
+    strcat(joined, right);
+    free(left);
+    free(right);
+    return joined;
+}
+
+void ast_set_modifiers(ASTNode *node, int modifiers) {
+    switch (node->type) {
+        case NODE_VAR_DECL:
+            node->var_decl.modifiers = modifiers;
+            break;
+        case NODE_FUNC_DECL:
+            node->func_decl.modifiers = modifiers;
+            break;
+        default:
+            break;
+    }
+}
+
 ASTNode* ast_create_node(NodeType type, int lineno) {
     ASTNode *node = (ASTNode*) calloc(1, sizeof(ASTNode));
     if (!node) {

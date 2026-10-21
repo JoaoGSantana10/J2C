@@ -152,6 +152,8 @@ struct ASTNode {
             ASTNode *condition;
         } do_while_stmt;
 
+        /* Increment: ASSIGN, UNARY_OP ou NULL, sem EXPR_STMT em volta*/
+
         struct {
             ASTNode *init;
             ASTNode *condition;
@@ -203,6 +205,8 @@ struct ASTNode {
             char *name;
         } identifier;
 
+        /* value: texto original do literal, com aspas e sufixos (ex.: "Ola", 'a', 1.5f) */
+
         struct {
             char *value;
         } literal;
@@ -212,7 +216,10 @@ struct ASTNode {
 /* Funcoes base e listas */
 ASTNode* ast_create_node(NodeType type, int lineno);
 ASTNode* ast_append(ASTNode *list, ASTNode *item);
-char* ast_safe_strdup(const char *s);
+char* ast_safe_strdup(const char *s); /* Funções auxiliares para as ações no parser */
+char* ast_join_qualified(char *left, char *right); 
+/* Junta dois nomes com '.' (ex.: "System" + "out" -> "System.out"). Assume a posse de left e right e os libera. */
+void ast_set_modifiers(ASTNode *node, int modifiers); /* Coloca os modificadores no campo certo (VAR_DECL ou FUNC_DECL) */
 
 /* Construtores de programa e declaracoes */
 ASTNode* ast_create_program(ASTNode *body, int lineno);
