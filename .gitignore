@@ -5,3 +5,4 @@ src/parser.tab.c
 src/unit_tests
 src/lex.yy.c
 src/ast.o
+src/unit_tests_symtab
