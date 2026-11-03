@@ -25,6 +25,8 @@ extern int contErroLex;
 %type <node> valor_literal expressao chamada_funcao argumento lista_argumentos argumentos_opt
 %type <ival> modificador modificadores_opt
 %type <node> declaracao decl_variavel decl_funcao param lista_parametros parametros_opt
+%type <node> bloco lista_comandos comando atribuicao inc_dec comando_return
+%type <node> comando_if comando_while comando_do_while comando_for comando_switch
 
 /* Habilita mensagens de erro sintático detalhadas */
 %define parse.error verbose
@@ -173,48 +175,48 @@ decl_variavel
 ;
 
 decl_funcao
-    : tipo ID '(' parametros_opt ')' bloco          { $$ = ast_create_func_decl(MOD_NONE, $1, $2, $4, NULL, yylineno); }
-    | KW_VOID ID '(' parametros_opt ')' bloco       { $$ = ast_create_func_decl(MOD_NONE, ast_safe_strdup("void"), $2, $4, NULL, yylineno); }
+    : tipo ID '(' parametros_opt ')' bloco          { $$ = ast_create_func_decl(MOD_NONE, $1, $2, $4, $6, yylineno); }
+    | KW_VOID ID '(' parametros_opt ')' bloco       { $$ = ast_create_func_decl(MOD_NONE, ast_safe_strdup("void"), $2, $4, $6, yylineno); }
 ;
 
 inc_dec
-    : OP_INC ID
-    | ID OP_INC
-    | OP_DEC ID
-    | ID OP_DEC
+    : OP_INC ID                                     { $$ = ast_create_unary_op(AST_UN_INC, 0, ast_create_identifier($2, yylineno), yylineno); }
+    | ID OP_INC                                     { $$ = ast_create_unary_op(AST_UN_INC, 1, ast_create_identifier($1, yylineno), yylineno); }
+    | OP_DEC ID                                     { $$ = ast_create_unary_op(AST_UN_DEC, 0, ast_create_identifier($2, yylineno), yylineno); }
+    | ID OP_DEC                                     { $$ = ast_create_unary_op(AST_UN_DEC, 1, ast_create_identifier($1, yylineno), yylineno); }
 ;
 
 bloco
-    : '{' lista_comandos '}'
+    : '{' lista_comandos '}'                        { $$ = ast_create_block($2, yylineno); }
 ;
 
 lista_comandos
-    : lista_comandos comando
-    | %empty
+    : lista_comandos comando                        { $$ = ast_append($1, $2); }
+    | %empty                                        { $$ = NULL; }
 ;
 
 /* COMANDOS */
 
 comando
-    : decl_variavel
-    | atribuicao ';'
-    | chamada_funcao ';'
-    | comando_return ';'
-    | comando_if
-    | comando_while
-    | comando_do_while
-    | comando_for
-    | comando_switch
-    | KW_BREAK ';'
-    | KW_CONTINUE ';'
-    | bloco
-    | inc_dec ';'
+    : decl_variavel                                 { $$ = $1; }
+    | atribuicao ';'                                { $$ = $1; }
+    | chamada_funcao ';'                            { $$ = ast_create_expr_stmt($1, yylineno); }
+    | comando_return ';'                            { $$ = $1; }
+    | comando_if                                    { $$ = $1; }
+    | comando_while                                 { $$ = $1; }
+    | comando_do_while                              { $$ = $1; }
+    | comando_for                                   { $$ = $1; }
+    | comando_switch                                { $$ = $1; }
+    | KW_BREAK ';'                                  { $$ = ast_create_break(yylineno); }
+    | KW_CONTINUE ';'                               { $$ = ast_create_continue(yylineno); }
+    | bloco                                         { $$ = $1; }
+    | inc_dec ';'                                   { $$ = ast_create_expr_stmt($1, yylineno); }
 ;
 
 atribuicao
-    : ID '=' expressao
-    | ID OP_PLUS_ASSIGN expressao
-    | ID OP_MINUS_ASSIGN expressao
+    : ID '=' expressao                              { $$ = ast_create_assign(AST_ASG_ASSIGN, $1, $3, yylineno); }
+    | ID OP_PLUS_ASSIGN expressao                   { $$ = ast_create_assign(AST_ASG_PLUS_ASSIGN, $1, $3, yylineno); }
+    | ID OP_MINUS_ASSIGN expressao                  { $$ = ast_create_assign(AST_ASG_MINUS_ASSIGN, $1, $3, yylineno); }
 ;
 
 argumento
@@ -241,27 +243,27 @@ nome_qualificado
 ;
 
 comando_return
-    : KW_RETURN expressao
-    | KW_RETURN
+    : KW_RETURN expressao                           { $$ = ast_create_return($2, yylineno); }
+    | KW_RETURN                                     { $$ = ast_create_return(NULL, yylineno); }
 ;
 
 /* --- ESTRUTURAS DE CONTROLE --- */
 
 comando_if
-    : KW_IF '(' expressao ')' comando %prec LOWER_THAN_ELSE
-    | KW_IF '(' expressao ')' comando KW_ELSE comando
+    : KW_IF '(' expressao ')' comando %prec LOWER_THAN_ELSE { $$ = NULL; }
+    | KW_IF '(' expressao ')' comando KW_ELSE comando       { $$ = NULL; }
 ;
 
 comando_while
-    : KW_WHILE '(' expressao ')' comando
+    : KW_WHILE '(' expressao ')' comando                    { $$ = NULL; }
 ;
 
 comando_do_while
-    : KW_DO comando KW_WHILE '(' expressao ')' ';'
+    : KW_DO comando KW_WHILE '(' expressao ')' ';'          { $$ = NULL; }
 ;
 
 comando_for
-    : KW_FOR '(' init_for ';' expressao_opt ';' pos_for ')' comando
+    : KW_FOR '(' init_for ';' expressao_opt ';' pos_for ')' comando { $$ = NULL; }
 ;
 
 init_for
@@ -282,7 +284,7 @@ pos_for
 ;
 
 comando_switch
-    : KW_SWITCH '(' expressao ')' '{' secao_cases '}'
+    : KW_SWITCH '(' expressao ')' '{' secao_cases '}'       { $$ = NULL; }
 ;
 
 secao_cases
