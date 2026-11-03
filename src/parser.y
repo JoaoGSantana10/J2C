@@ -23,6 +23,8 @@ extern int contErroLex;
 
 %type <sval> tipo nome_qualificado
 %type <node> valor_literal expressao chamada_funcao argumento lista_argumentos argumentos_opt
+%type <ival> modificador modificadores_opt
+%type <node> declaracao decl_variavel decl_funcao param lista_parametros parametros_opt
 
 /* Habilita mensagens de erro sintático detalhadas */
 %define parse.error verbose
@@ -113,20 +115,20 @@ corpo_classe
 ;
 
 declaracao
-    : modificadores_opt decl_variavel
-    | modificadores_opt decl_funcao
+    : modificadores_opt decl_variavel   { ast_set_modifiers($2, $1); $$ = $2; }
+    | modificadores_opt decl_funcao     { ast_set_modifiers($2, $1); $$ = $2; }
 ;
 
 modificador
-    : KW_PUBLIC
-    | KW_PRIVATE
-    | KW_PROTECTED
-    | KW_STATIC
+    : KW_PUBLIC                         { $$ = MOD_PUBLIC; }
+    | KW_PRIVATE                        { $$ = MOD_PRIVATE; }
+    | KW_PROTECTED                      { $$ = MOD_PROTECTED; }
+    | KW_STATIC                         { $$ = MOD_STATIC; }
 ;
 
 modificadores_opt
-    : modificadores_opt modificador
-    | %empty
+    : modificadores_opt modificador     { $$ = $1 | $2; }
+    | %empty                            { $$ = MOD_NONE; }
 ;
 
 tipo
@@ -151,28 +153,28 @@ valor_literal
 ;
 
 param
-    : tipo ID
-    | ID '[' ']' ID
+    : tipo ID                                       { $$ = ast_create_param($1, $2, 0, yylineno); }
+    | ID '[' ']' ID                                 { $$ = ast_create_param($1, $4, 1, yylineno); }
 ; 
 
 lista_parametros
-    : lista_parametros ',' param
-    | param
+    : lista_parametros ',' param                    { $$ = ast_append($1, $3); }
+    | param                                         { $$ = $1; }
 ;
 
 parametros_opt
-    : %empty
-    | lista_parametros
+    : %empty                                        { $$ = NULL; }
+    | lista_parametros                              { $$ = $1; }
 ;
 
 decl_variavel
-    : tipo ID ';'
-    | tipo ID '=' expressao ';'
+    : tipo ID ';'                                   { $$ = ast_create_var_decl(MOD_NONE, $1, $2, NULL, yylineno); }
+    | tipo ID '=' expressao ';'                     { $$ = ast_create_var_decl(MOD_NONE, $1, $2, $4, yylineno); }
 ;
 
 decl_funcao
-    : tipo ID '(' parametros_opt ')' bloco
-    | KW_VOID ID'(' parametros_opt ')' bloco
+    : tipo ID '(' parametros_opt ')' bloco          { $$ = ast_create_func_decl(MOD_NONE, $1, $2, $4, NULL, yylineno); }
+    | KW_VOID ID '(' parametros_opt ')' bloco       { $$ = ast_create_func_decl(MOD_NONE, ast_safe_strdup("void"), $2, $4, NULL, yylineno); }
 ;
 
 inc_dec
