@@ -27,6 +27,7 @@ extern int contErroLex;
 %type <node> declaracao decl_variavel decl_funcao param lista_parametros parametros_opt
 %type <node> bloco lista_comandos comando atribuicao inc_dec comando_return
 %type <node> comando_if comando_while comando_do_while comando_for comando_switch
+%type <node> init_for expressao_opt pos_for secao_cases lista_cases elemento_case elemento_default
 
 /* Habilita mensagens de erro sintático detalhadas */
 %define parse.error verbose
@@ -250,59 +251,59 @@ comando_return
 /* --- ESTRUTURAS DE CONTROLE --- */
 
 comando_if
-    : KW_IF '(' expressao ')' comando %prec LOWER_THAN_ELSE { $$ = NULL; }
-    | KW_IF '(' expressao ')' comando KW_ELSE comando       { $$ = NULL; }
+    : KW_IF '(' expressao ')' comando %prec LOWER_THAN_ELSE { $$ = ast_create_if($3, $5, NULL, yylineno); }
+    | KW_IF '(' expressao ')' comando KW_ELSE comando       { $$ = ast_create_if($3, $5, $7, yylineno); }
 ;
 
 comando_while
-    : KW_WHILE '(' expressao ')' comando                    { $$ = NULL; }
+    : KW_WHILE '(' expressao ')' comando                    { $$ = ast_create_while($3, $5, yylineno); }
 ;
 
 comando_do_while
-    : KW_DO comando KW_WHILE '(' expressao ')' ';'          { $$ = NULL; }
+    : KW_DO comando KW_WHILE '(' expressao ')' ';'          { $$ = ast_create_do_while($2, $5, yylineno); }
 ;
 
 comando_for
-    : KW_FOR '(' init_for ';' expressao_opt ';' pos_for ')' comando { $$ = NULL; }
+    : KW_FOR '(' init_for ';' expressao_opt ';' pos_for ')' comando { $$ = ast_create_for($3, $5, $7, $9, yylineno); }
 ;
 
 init_for
-    : tipo ID '=' expressao
-    | atribuicao
-    | %empty
+    : tipo ID '=' expressao                                 { $$ = ast_create_var_decl(MOD_NONE, $1, $2, $4, yylineno); }
+    | atribuicao                                            { $$ = $1; }
+    | %empty                                                { $$ = NULL; }
 ;
 
 expressao_opt
-    : expressao
-    | %empty
+    : expressao                                             { $$ = $1; }
+    | %empty                                                { $$ = NULL; }
 ;
 
 pos_for
-    : atribuicao
-    | expressao
-    | %empty
+    : atribuicao                                            { $$ = $1; }
+    | expressao                                             { $$ = $1; }
+    | %empty                                                { $$ = NULL; }
 ;
 
 comando_switch
-    : KW_SWITCH '(' expressao ')' '{' secao_cases '}'       { $$ = NULL; }
+    : KW_SWITCH '(' expressao ')' '{' secao_cases '}'       { $$ = ast_create_switch($3, $6, yylineno); }
 ;
 
 secao_cases
-    : lista_cases
-    | lista_cases elemento_default
+    : lista_cases                                           { $$ = $1; }
+    | lista_cases elemento_default                          { $$ = ast_append($1, $2); }
 ;
 
 lista_cases
-    : lista_cases elemento_case
-    | %empty
+    : lista_cases elemento_case                             { $$ = ast_append($1, $2); }
+    | %empty                                                { $$ = NULL; }
 ;
 
 elemento_case
-    : KW_CASE valor_literal ':' lista_comandos
+    : KW_CASE valor_literal ':' lista_comandos              { $$ = ast_create_case($2, $4, yylineno); }
 ;
 
 elemento_default
-    : KW_DEFAULT ':' lista_comandos
+    : KW_DEFAULT ':' lista_comandos                         { $$ = ast_create_default($3, yylineno); }
 ;
 
 /* --- EXPRESSÕES E PRECEDÊNCIA --- */
