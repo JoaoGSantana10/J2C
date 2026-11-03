@@ -3,12 +3,23 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include "ast.h"
 
 int yylex(void);
 void yyerror(const char *s);
 extern int yylineno;
 extern int contErroLex;
 %}
+
+%code requires {
+    #include "ast.h"
+}
+
+%union {
+    int ival;
+    char *sval;
+    ASTNode *node;
+}
 
 /* Habilita mensagens de erro sintático detalhadas */
 %define parse.error verbose
@@ -46,19 +57,19 @@ extern int contErroLex;
 %token KW_RETURN
 
 /* Literais booleanos */
-%token KW_TRUE 
-%token KW_FALSE
+%token <sval> KW_TRUE 
+%token <sval> KW_FALSE
 
 /* Identificador */
-%token ID
+%token <sval> ID
 
 /* Literais de valor */
-%token LIT_INT 
-%token LIT_DOUBLE 
-%token LIT_LONG 
-%token LIT_FLOAT 
-%token LIT_CHAR 
-%token LIT_STRING
+%token <sval> LIT_INT 
+%token <sval> LIT_DOUBLE 
+%token <sval> LIT_LONG 
+%token <sval> LIT_FLOAT 
+%token <sval> LIT_CHAR 
+%token <sval> LIT_STRING
 
 /* Operadores Multi-caractere */
 %token OP_IGUAL 

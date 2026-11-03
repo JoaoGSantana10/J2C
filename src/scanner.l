@@ -1,6 +1,7 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include "ast.h"
 #include "parser.tab.h"
 
 int contErroLex = 0;
@@ -74,21 +75,21 @@ ALFANUM     [a-zA-Z_$0-9]
 "continue"  { return KW_CONTINUE; }
 "default"   { return KW_DEFAULT; }
 "return"    { return KW_RETURN; }
-"true"      { return KW_TRUE; }
-"false"     { return KW_FALSE; }
+"true"      { yylval.sval = ast_safe_strdup(yytext); return KW_TRUE; }
+"false"     { yylval.sval = ast_safe_strdup(yytext); return KW_FALSE; }
 "new"       { return KW_NEW; }
 
-{DIGITO}+                   { return LIT_INT; }
-{DIGITO}+"."{DIGITO}+[Dd]   { return LIT_DOUBLE; }
-{DIGITO}+"."{DIGITO}+       { return LIT_DOUBLE; }
-{DIGITO}+"."{DIGITO}+[Ff]   { return LIT_FLOAT; }
-{DIGITO}+[Ll]               { return LIT_LONG; }
-{DIGITO}+[Dd]               { return LIT_DOUBLE; }
-{DIGITO}+[Ff]               { return LIT_FLOAT;}
-"'"."'"                     { return LIT_CHAR; }
-\"[^"\n]*\"                 { return LIT_STRING; }
+{DIGITO}+                   { yylval.sval = ast_safe_strdup(yytext); return LIT_INT; }
+{DIGITO}+"."{DIGITO}+[Dd]   { yylval.sval = ast_safe_strdup(yytext); return LIT_DOUBLE; }
+{DIGITO}+"."{DIGITO}+       { yylval.sval = ast_safe_strdup(yytext); return LIT_DOUBLE; }
+{DIGITO}+"."{DIGITO}+[Ff]   { yylval.sval = ast_safe_strdup(yytext); return LIT_FLOAT; }
+{DIGITO}+[Ll]               { yylval.sval = ast_safe_strdup(yytext); return LIT_LONG; }
+{DIGITO}+[Dd]               { yylval.sval = ast_safe_strdup(yytext); return LIT_DOUBLE; }
+{DIGITO}+[Ff]               { yylval.sval = ast_safe_strdup(yytext); return LIT_FLOAT;}
+"'"."'"                     { yylval.sval = ast_safe_strdup(yytext); return LIT_CHAR; }
+\"[^"\n]*\"                 { yylval.sval = ast_safe_strdup(yytext); return LIT_STRING; }
 
-{LETRA}{ALFANUM}*           { return ID; }
+{LETRA}{ALFANUM}*           { yylval.sval = ast_safe_strdup(yytext); return ID; }
 
 .   { fprintf(stderr, "Erro léxico na linha %d: caractere inesperado '%s'\n", yylineno, yytext); contErroLex++; }
 %%

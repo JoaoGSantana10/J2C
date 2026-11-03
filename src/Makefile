@@ -5,16 +5,16 @@ BISON = bison
 
 all: parser
 
-parser: parser.y scanner.l symtab.c symtab.h
+parser: parser.y scanner.l symtab.c symtab.h ast.c ast.h
 	$(BISON) -d parser.y
 	$(FLEX) scanner.l
-	$(CC) $(CFLAGS) parser.tab.c lex.yy.c symtab.c -o parser
+	$(CC) $(CFLAGS) parser.tab.c lex.yy.c symtab.c ast.c -o parser
 
 # Testes unitários de tokens do scanner
-test-scanner: parser.y scanner.l test_runner.c
+test-scanner: parser.y scanner.l test_runner.c ast.c ast.h
 	$(BISON) -d parser.y
 	$(FLEX) scanner.l
-	$(CC) $(CFLAGS) -DTEST_MODE lex.yy.c test_runner.c -o unit_tests
+	$(CC) $(CFLAGS) -DTEST_MODE lex.yy.c ast.c test_runner.c -o unit_tests
 	./unit_tests
 
 # Testes unitários da tabela de símbolos
