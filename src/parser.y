@@ -21,6 +21,9 @@ extern int contErroLex;
     ASTNode *node;
 }
 
+%type <sval> tipo nome_qualificado
+%type <node> valor_literal expressao chamada_funcao argumento lista_argumentos argumentos_opt
+
 /* Habilita mensagens de erro sintático detalhadas */
 %define parse.error verbose
 
@@ -127,24 +130,24 @@ modificadores_opt
 ;
 
 tipo
-    : KW_INT 
-    | KW_DOUBLE 
-    | KW_FLOAT 
-    | KW_BOOLEAN 
-    | KW_CHAR 
-    | KW_LONG
-    | ID
+    : KW_INT            { $$ = ast_safe_strdup("int"); }
+    | KW_DOUBLE         { $$ = ast_safe_strdup("double"); }
+    | KW_FLOAT          { $$ = ast_safe_strdup("float"); }
+    | KW_BOOLEAN        { $$ = ast_safe_strdup("boolean"); }
+    | KW_CHAR           { $$ = ast_safe_strdup("char"); }
+    | KW_LONG           { $$ = ast_safe_strdup("long"); }
+    | ID                { $$ = $1; }
 ;
 
 valor_literal
-    : LIT_INT
-    | LIT_LONG
-    | LIT_DOUBLE
-    | LIT_STRING
-    | LIT_FLOAT
-    | LIT_CHAR
-    | KW_TRUE
-    | KW_FALSE
+    : LIT_INT           { $$ = ast_create_literal(NODE_LITERAL_INT, $1, yylineno); }
+    | LIT_LONG          { $$ = ast_create_literal(NODE_LITERAL_LONG, $1, yylineno); }
+    | LIT_DOUBLE        { $$ = ast_create_literal(NODE_LITERAL_DOUBLE, $1, yylineno); }
+    | LIT_STRING        { $$ = ast_create_literal(NODE_LITERAL_STRING, $1, yylineno); }
+    | LIT_FLOAT         { $$ = ast_create_literal(NODE_LITERAL_FLOAT, $1, yylineno); }
+    | LIT_CHAR          { $$ = ast_create_literal(NODE_LITERAL_CHAR, $1, yylineno); }
+    | KW_TRUE           { $$ = ast_create_literal(NODE_LITERAL_BOOL, $1, yylineno); }
+    | KW_FALSE          { $$ = ast_create_literal(NODE_LITERAL_BOOL, $1, yylineno); }
 ;
 
 param
@@ -213,26 +216,26 @@ atribuicao
 ;
 
 argumento
-    : expressao
+    : expressao                                 { $$ = $1; }
 ;
 
 lista_argumentos
-    : lista_argumentos ',' argumento
-    | argumento
+    : lista_argumentos ',' argumento            { $$ = ast_append($1, $3); }
+    | argumento                                 { $$ = $1; }
 ;
 
 argumentos_opt
-    : %empty
-    | lista_argumentos
+    : %empty                                    { $$ = NULL; }
+    | lista_argumentos                          { $$ = $1; }
 ;
 
 chamada_funcao
-    : nome_qualificado '(' argumentos_opt ')'
+    : nome_qualificado '(' argumentos_opt ')'   { $$ = ast_create_call($1, $3, yylineno); }
 ;
 
 nome_qualificado
-    : nome_qualificado '.' ID
-    | ID
+    : nome_qualificado '.' ID                   { $$ = ast_join_qualified($1, $3); }
+    | ID                                        { $$ = $1; }
 ;
 
 comando_return
@@ -301,30 +304,30 @@ elemento_default
 /* --- EXPRESSÕES E PRECEDÊNCIA --- */
 
 expressao
-    : expressao '+' expressao
-    | expressao '-' expressao
-    | expressao '*' expressao
-    | expressao '/' expressao
-    | expressao '%' expressao
-    | expressao OP_IGUAL expressao
-    | expressao OP_DIFERENTE expressao
-    | expressao '>' expressao
-    | expressao '<' expressao
-    | expressao OP_MAIOR_IGUAL expressao
-    | expressao OP_MENOR_IGUAL expressao
-    | expressao OP_AND expressao
-    | expressao OP_OR expressao
-    | '!' expressao
-    | '-' expressao %prec UMINUS
-    | OP_INC ID
-    | ID OP_INC
-    | OP_DEC ID
-    | ID OP_DEC
-    | '(' expressao ')'
-    | ID
-    | valor_literal
-    | chamada_funcao
-    | KW_NEW ID '(' nome_qualificado ')'
+    : expressao '+' expressao               { $$ = ast_create_bin_op(AST_OP_ADD, $1, $3, yylineno); }
+    | expressao '-' expressao               { $$ = ast_create_bin_op(AST_OP_SUB, $1, $3, yylineno); }
+    | expressao '*' expressao               { $$ = ast_create_bin_op(AST_OP_MUL, $1, $3, yylineno); }
+    | expressao '/' expressao               { $$ = ast_create_bin_op(AST_OP_DIV, $1, $3, yylineno); }
+    | expressao '%' expressao               { $$ = ast_create_bin_op(AST_OP_MOD, $1, $3, yylineno); }
+    | expressao OP_IGUAL expressao          { $$ = ast_create_bin_op(AST_OP_EQ, $1, $3, yylineno); }
+    | expressao OP_DIFERENTE expressao      { $$ = ast_create_bin_op(AST_OP_NE, $1, $3, yylineno); }
+    | expressao '>' expressao               { $$ = ast_create_bin_op(AST_OP_GT, $1, $3, yylineno); }
+    | expressao '<' expressao               { $$ = ast_create_bin_op(AST_OP_LT, $1, $3, yylineno); }
+    | expressao OP_MAIOR_IGUAL expressao    { $$ = ast_create_bin_op(AST_OP_GE, $1, $3, yylineno); }
+    | expressao OP_MENOR_IGUAL expressao    { $$ = ast_create_bin_op(AST_OP_LE, $1, $3, yylineno); }
+    | expressao OP_AND expressao            { $$ = ast_create_bin_op(AST_OP_AND, $1, $3, yylineno); }
+    | expressao OP_OR expressao             { $$ = ast_create_bin_op(AST_OP_OR, $1, $3, yylineno); }
+    | '!' expressao                         { $$ = ast_create_unary_op(AST_UN_NOT, 0, $2, yylineno); }
+    | '-' expressao %prec UMINUS            { $$ = ast_create_unary_op(AST_UN_NEG, 0, $2, yylineno); }
+    | OP_INC ID                             { $$ = ast_create_unary_op(AST_UN_INC, 0, ast_create_identifier($2, yylineno), yylineno); }
+    | ID OP_INC                             { $$ = ast_create_unary_op(AST_UN_INC, 1, ast_create_identifier($1, yylineno), yylineno); }
+    | OP_DEC ID                             { $$ = ast_create_unary_op(AST_UN_DEC, 0, ast_create_identifier($2, yylineno), yylineno); }
+    | ID OP_DEC                             { $$ = ast_create_unary_op(AST_UN_DEC, 1, ast_create_identifier($1, yylineno), yylineno); }
+    | '(' expressao ')'                     { $$ = $2; }
+    | ID                                    { $$ = ast_create_identifier($1, yylineno); }
+    | valor_literal                         { $$ = $1; }
+    | chamada_funcao                        { $$ = $1; }
+    | KW_NEW ID '(' nome_qualificado ')'    { $$ = ast_create_new($2, $4, yylineno); }
 ;
 
 %%
