@@ -9,6 +9,8 @@ int yylex(void);
 void yyerror(const char *s);
 extern int yylineno;
 extern int contErroLex;
+
+ASTNode *ast_raiz = NULL;
 %}
 
 %code requires {
@@ -22,6 +24,7 @@ extern int contErroLex;
 }
 
 %type <sval> tipo nome_qualificado
+%type <node> programa corpo_classe
 %type <node> valor_literal expressao chamada_funcao argumento lista_argumentos argumentos_opt
 %type <ival> modificador modificadores_opt
 %type <node> declaracao decl_variavel decl_funcao param lista_parametros parametros_opt
@@ -109,12 +112,16 @@ extern int contErroLex;
 /* REGRAS GRAMATICAIS */
 
 programa
-    : KW_PUBLIC KW_CLASS ID '{' corpo_classe '}' 
+    : KW_PUBLIC KW_CLASS ID '{' corpo_classe '}' {
+        ASTNode *classe = ast_create_class(MOD_PUBLIC, $3, $5, yylineno);
+        $$ = ast_create_program(classe, yylineno);
+        ast_raiz = $$;
+    }
 ;
 
 corpo_classe
-    : corpo_classe declaracao
-    | %empty
+    : corpo_classe declaracao   { $$ = ast_append($1, $2); }
+    | %empty                    { $$ = NULL; }
 ;
 
 declaracao
@@ -351,12 +358,23 @@ int main(void) {
         (contErroLex == 1) ? "Foi encontrado" : "Foram encontrados",
         contErroLex,
         (contErroLex == 1) ? "erro léxico" : "erros léxicos");
+        if (ast_raiz) {
+            ast_free(ast_raiz);
+        }
         return 1;
     }
 
     if (result == 0) {
         printf("Análise sintática concluída com sucesso!\n");
+        if (ast_raiz) {
+            ast_print(ast_raiz, 0);
+            ast_free(ast_raiz);
+        }
         return 0; /* Código 0: Sucesso */
+    }
+
+    if (ast_raiz) {
+        ast_free(ast_raiz);
     }
     return 1;     /* Código 1: Erro de sintaxe */
 }
