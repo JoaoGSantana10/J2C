@@ -10,6 +10,9 @@ extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
 extern int yylex(void);
 extern int yylineno; /* Variável que mantém o número da linha atual */
 
+/* Em TEST_MODE o parser não é linkado, então o yylval usado pelo scanner é definido aqui */
+YYSTYPE yylval;
+
 int total_tests = 0;
 int passed_tests = 0;
 
