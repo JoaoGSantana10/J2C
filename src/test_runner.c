@@ -10,6 +10,9 @@ extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
 extern int yylex(void);
 extern int yylineno; /* Variável que mantém o número da linha atual */
 
+/* Em TEST_MODE o parser não é linkado, então o yylval usado pelo scanner é definido aqui */
+YYSTYPE yylval;
+
 int total_tests = 0;
 int passed_tests = 0;
 YYSTYPE yylval;
@@ -55,6 +58,11 @@ int main(void)
     run_test("Modificador static", "static", KW_STATIC);
     run_test("Declaração class", "class", KW_CLASS);
     run_test("Identificador com prefixo de palavra-chave", "publico", ID);
+    run_test("Tipo void", "void", KW_VOID);
+    run_test("Estrutura for", "for", KW_FOR);
+    run_test("Operador new", "new", KW_NEW);
+    run_test("Classe Scanner como identificador", "Scanner", ID);
+    run_test("Classe System como identificador", "System", ID);
 
     /* --- TESTES DE OPERADORES --- */
     run_test("Operador Soma", "+", '+');
@@ -62,10 +70,14 @@ int main(void)
     run_test("Operador Incremento", "++", OP_INC);
     run_test("Operador Diferença", "!=", OP_DIFERENTE);
     run_test("Operador E Lógico", "&&", OP_AND);
+    run_test("Operador Menor", "<", '<');
 
     /* --- TESTES DE DELIMITADORES --- */
     run_test("Abre Parênteses", "(", '(');
     run_test("Ponto e Vírgula", ";", ';');
+    run_test("Ponto (acesso a membro)", ".", '.');
+    run_test("Abre Colchetes", "[", '[');
+    run_test("Fecha Colchetes", "]", ']');
 
     /* --- TESTES DE IDENTIFICADORES E LITERAIS --- */
     run_test("Identificador simples", "contador", ID);
