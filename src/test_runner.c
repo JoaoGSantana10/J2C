@@ -12,6 +12,7 @@ extern int yylineno; /* Variável que mantém o número da linha atual */
 
 int total_tests = 0;
 int passed_tests = 0;
+YYSTYPE yylval;
 
 /* Função que executa o scanner e valida o TOKEN retornado pelo yylex() */
 void run_test(const char *test_name, const char *input, int expected_token)
