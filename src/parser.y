@@ -367,7 +367,7 @@ int main(void) {
     if (result == 0) {
         printf("Análise sintática concluída com sucesso!\n");
         if (ast_raiz) {
-            ast_print(ast_raiz, 0);
+            ast_print(ast_raiz);
             ast_free(ast_raiz);
         }
         return 0; /* Código 0: Sucesso */

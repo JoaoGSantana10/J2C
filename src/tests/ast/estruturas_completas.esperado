@@ -1,0 +1,95 @@
+Programa
+└── Classe Completo
+    ├── DeclVar int total
+    │   └── Literal 0
+    ├── Funcao soma
+    │   ├── Param int a
+    │   ├── Param int b
+    │   └── Return
+    │       └── OpBinario +
+    │           ├── Id a
+    │           └── OpBinario *
+    │               ├── Id b
+    │               └── Literal 2
+    └── Funcao main
+        ├── Param String[] args
+        ├── DeclVar Scanner sc
+        │   └── New Scanner(System.in)
+        ├── DeclVar int n
+        │   └── Chamada sc.nextInt
+        ├── DeclVar boolean ativo
+        │   └── OpUnario !
+        │       └── Literal false
+        ├── If
+        │   ├── Condicao
+        │   │   └── OpBinario &&
+        │   │       ├── OpBinario >
+        │   │       │   ├── Id n
+        │   │       │   └── Literal 0
+        │   │       └── Id ativo
+        │   ├── Entao
+        │   │   └── Bloco
+        │   │       └── Atribuicao total +=
+        │   │           └── Chamada soma
+        │   │               ├── Id n
+        │   │               └── Literal 3
+        │   └── Senao
+        │       └── Bloco
+        │           └── Atribuicao total =
+        │               └── OpUnario -
+        │                   └── Literal 1
+        ├── While
+        │   ├── Condicao
+        │   │   └── OpBinario !=
+        │   │       ├── Id n
+        │   │       └── Literal 0
+        │   └── Corpo
+        │       └── Bloco
+        │           └── ComandoExpr
+        │               └── OpUnario -- (posfixo)
+        │                   └── Id n
+        ├── DoWhile
+        │   ├── Corpo
+        │   │   └── Bloco
+        │   │       └── ComandoExpr
+        │   │           └── OpUnario ++ (prefixo)
+        │   │               └── Id n
+        │   └── Condicao
+        │       └── OpBinario <
+        │           ├── Id n
+        │           └── Literal 10
+        ├── For
+        │   ├── Init
+        │   │   └── DeclVar int i
+        │   │       └── Literal 0
+        │   ├── Condicao
+        │   │   └── OpBinario <
+        │   │       ├── Id i
+        │   │       └── Id n
+        │   ├── Incremento
+        │   │   └── OpUnario ++ (posfixo)
+        │   │       └── Id i
+        │   └── Corpo
+        │       └── Bloco
+        │           ├── If
+        │           │   ├── Condicao
+        │           │   │   └── OpBinario ==
+        │           │   │       ├── Id i
+        │           │   │       └── Literal 2
+        │           │   └── Entao
+        │           │       └── Continue
+        │           └── ComandoExpr
+        │               └── Chamada System.out.println
+        │                   └── Literal "Ola"
+        ├── Switch
+        │   ├── Expressao
+        │   │   └── Id n
+        │   ├── Case 1
+        │   │   └── Break
+        │   └── Default
+        │       └── Atribuicao total -=
+        │           └── Literal 'a'
+        └── For
+            └── Corpo
+                └── Bloco
+                    └── Break
