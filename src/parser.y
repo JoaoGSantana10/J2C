@@ -367,19 +367,6 @@ int main(void) {
 
     if (result == 0) {
         printf("Análise sintática concluída com sucesso!\n");
-        if (ast_raiz) {
-            ast_print(ast_raiz, 0);
-            ast_free(ast_raiz);
-        }
-        return 0; /* Código 0: Sucesso */
-    }
-
-    if (ast_raiz) {
-        ast_free(ast_raiz);
-    }
-
-        if (result == 0) {
-        printf("Análise sintática concluída com sucesso!\n");
         int erros_sem = ast_raiz ? semantico_analisar(ast_raiz) : 0;
         if (ast_raiz) {
             ast_print(ast_raiz, 0);
@@ -389,7 +376,11 @@ int main(void) {
             fprintf(stderr, "Foram encontrados %d erro(s) semântico(s)\n", erros_sem);
             return 1;
         }
-        return 0;
+        return 0; /* Código 0: Sucesso */
+    }
+
+    if (ast_raiz) {
+        ast_free(ast_raiz);
     }
     return 1;     /* Código 1: Erro de sintaxe */
 }
