@@ -5,4 +5,5 @@ public class escopo_nao_declarado {
             int y = 2;
         }
         y = 3;
+    }
 }
