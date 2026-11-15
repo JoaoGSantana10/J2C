@@ -47,10 +47,14 @@ static Tipo tipo_de(const char *nome, int dimensoes)
         const char *nome;
         TipoBase base;
     } conhecidos[] = {
-        {"int", TIPO_INT},         {"long", TIPO_LONG},
-        {"float", TIPO_FLOAT},     {"double", TIPO_DOUBLE},
-        {"boolean", TIPO_BOOLEAN}, {"char", TIPO_CHAR},
-        {"String", TIPO_STRING},   {"void", TIPO_VOID},
+        {"int", TIPO_INT},
+        {"long", TIPO_LONG},
+        {"float", TIPO_FLOAT},
+        {"double", TIPO_DOUBLE},
+        {"boolean", TIPO_BOOLEAN},
+        {"char", TIPO_CHAR},
+        {"String", TIPO_STRING},
+        {"void", TIPO_VOID},
     };
 
     Tipo t = {TIPO_CLASSE, nome, dimensoes};
@@ -271,31 +275,25 @@ static void visitar(Sem *s, const ASTNode *n)
     case NODE_LITERAL_BOOL:
         break;
 
-    /* =====================================================================
-     * TODO(dupla) 1: FOR
-     * Hoje só desce nos filhos, SEM escopo próprio. Efeito: dois 'for'
-     * seguidos com 'int i' dão falso "redeclaração".
-     * Dica: o 'int i' do init pertence ao for. Abra um escopo antes do
-     * init e feche depois do body. (O body, se for bloco, abre o seu.)
-     * ===================================================================== */
+    /* ---- for: o 'int i' do init pertence ao for ----
+     * O escopo do for envolve init, condição, incremento e corpo. Assim o
+     * 'i' some quando o for termina, e dois for seguidos podem usar 'int i'.
+     * Se o corpo for um bloco '{ }', ele abre o seu próprio escopo dentro
+     * deste (como no Java). */
     case NODE_FOR:
+        abrir_escopo(s);
         visitar(s, n->for_stmt.init);
         visitar(s, n->for_stmt.condition);
         visitar(s, n->for_stmt.increment);
         visitar(s, n->for_stmt.body);
+        fechar_escopo(s);
         break;
 
-    /* =====================================================================
-     * TODO(dupla) 2: SWITCH / CASE / DEFAULT
-     * Hoje não abre escopo. Em Java o corpo inteiro do switch é UM escopo
-     * só (não um por 'case'): 'case 1: int a; break; case 2: int a;' é
-     * redeclaração.
-     * Dica: abra/feche o escopo em NODE_SWITCH em volta dos cases.
-     * NODE_CASE e NODE_DEFAULT continuam só visitando seus comandos.
-     * ===================================================================== */
     case NODE_SWITCH:
         visitar(s, n->switch_stmt.expr);
+        abrir_escopo(s);
         visitar_lista(s, n->switch_stmt.cases);
+        fechar_escopo(s);
         break;
 
     case NODE_CASE:
@@ -306,18 +304,17 @@ static void visitar(Sem *s, const ASTNode *n)
         visitar_lista(s, n->default_stmt.statements);
         break;
 
-    /* =====================================================================
-     * TODO(dupla) 3 (decisão de projeto): CALL e NEW
-     * func_name vem qualificado ("System.out.println"), então NÃO dá para
-     * simplesmente chamar usar(). Por enquanto só visitamos os argumentos.
-     * Decidam: checar chamadas sem '.' (métodos da própria classe)? E o
-     * arg_name do 'new'? Pode ficar para outra issue.
-     * ===================================================================== */
     case NODE_CALL:
+        if (!strchr(n->call.func_name, '.') &&
+            !symtab_buscar(s->tab, n->call.func_name))
+            erro(s, n->lineno, "método '%s' não declarado",
+                 n->call.func_name);
         visitar_lista(s, n->call.args);
         break;
 
     case NODE_NEW:
+        if (n->new_expr.arg_name && !strchr(n->new_expr.arg_name, '.'))
+            usar(s, n->new_expr.arg_name, n->lineno);
         break;
     }
 }
