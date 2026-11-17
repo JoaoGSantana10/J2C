@@ -1,0 +1,17 @@
+Análise sintática concluída com sucesso!
+Program
+  Class: C
+    FuncDecl: void f
+      Block
+        VarDecl: boolean r
+          Init:
+            BinOp: op=12
+              BinOp: op=11
+                BinOp: op=7
+                  Id: a
+                  Id: b
+                BinOp: op=5
+                  Id: c
+                  Id: d
+              UnaryOp: op=3 postfix=0
+                Id: e

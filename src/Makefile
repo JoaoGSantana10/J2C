@@ -26,10 +26,14 @@ test-symtab: test_symtab.c symtab.c symtab.h
 test-parser: parser
 	bash run_parser_tests.sh
 
+# Testes da forma da AST (compara com arquivos .esperado)
+test-ast: parser
+	bash run_ast_tests.sh
+
 # Roda todos os testes do projeto
-test: test-scanner test-symtab test-parser
+test: test-scanner test-symtab test-parser test-ast
 
 clean:
 	rm -f lex.yy.c parser.tab.c parser.tab.h parser unit_tests unit_tests_symtab
 
-.PHONY: all test-scanner test-symtab test-parser test clean
+.PHONY: all test-scanner test-symtab test-parser test-ast test clean
