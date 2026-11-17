@@ -1,0 +1,15 @@
+Análise sintática concluída com sucesso!
+Programa
+└── Classe C
+    └── Funcao f
+        └── DeclVar boolean r
+            └── OpBinario ||
+                ├── OpBinario &&
+                │   ├── OpBinario <
+                │   │   ├── Id a
+                │   │   └── Id b
+                │   └── OpBinario ==
+                │       ├── Id c
+                │       └── Id d
+                └── OpUnario !
+                    └── Id e

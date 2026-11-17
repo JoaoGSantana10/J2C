@@ -26,7 +26,7 @@ test-symtab: test_symtab.c symtab.c symtab.h
 test-parser: parser
 	bash run_parser_tests.sh
 
-# Testes da impressao da AST (compara com tests/ast/*.esperado)
+# Testes da forma da AST (compara com arquivos .esperado)
 test-ast: parser
 	bash run_ast_tests.sh
 

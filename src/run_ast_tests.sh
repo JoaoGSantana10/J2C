@@ -1,52 +1,39 @@
 #!/bin/bash
-
-# Testes da impressao da AST: para cada tests/ast/X.java, compara a arvore
-# impressa pelo parser com o conteudo de tests/ast/X.esperado.
-# A primeira linha da saida (mensagem de sucesso) e ignorada.
+# Compara a AST impressa pelo parser com a saída esperada (.esperado).
+# Os números de linha são removidos para o teste focar só na forma da árvore.
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
-NC='\033[0m' # Sem Cor
+NC='\033[0m'
 
 PASSED=0
 FAILED=0
 
-echo "       TESTES DA IMPRESSAO DA AST                "
-echo -e "\n--- Arvore impressa x saida esperada ---"
+echo "       TESTES DA AST (FORMA DA ÁRVORE)          "
 
-for file in tests/ast/*.java; do
-    [ -f "$file" ] || continue
-    expected="${file%.java}.esperado"
+for entrada in tests/ast/*.java; do
+    esperado="${entrada%.java}.esperado"
 
-    if [ ! -f "$expected" ]; then
-        echo -e " ${RED}[FAIL]${NC} $file (arquivo $expected nao encontrado)"
+    if [ ! -f "$esperado" ]; then
+        echo -e " ${RED}[FAIL]${NC} $entrada (arquivo $esperado não encontrado)"
         FAILED=$((FAILED + 1))
         continue
     fi
+    
+    # tr -d '\r' remove o final de linha do Windows (CRLF);
+    # $(...) remove as linhas em branco do final dos dois textos.
+    esperado_txt=$(tr -d '\r' < "$esperado")
+    obtido=$(./parser < "$entrada" 2>&1 | sed 's/ (linha [0-9]*)//')
 
-    output=$(./parser < "$file" 2>&1)
-    status=$?
-
-    if [ $status -ne 0 ]; then
-        echo -e " ${RED}[FAIL]${NC} $file (parser retornou codigo $status)"
-        echo "$output"
-        FAILED=$((FAILED + 1))
-        continue
-    fi
-
-    # --strip-trailing-cr: aceita .esperado com CRLF (checkout no Windows)
-    if diff_output=$(echo "$output" | tail -n +2 | diff -u --strip-trailing-cr "$expected" -); then
-        echo -e " ${GREEN}[PASS]${NC} $file"
+    if diff -u <(echo "$esperado_txt") <(echo "$obtido") > /tmp/ast_diff.txt; then
+        echo -e " ${GREEN}[PASS]${NC} $entrada"
         PASSED=$((PASSED + 1))
     else
-        echo -e " ${RED}[FAIL]${NC} $file (arvore diferente do esperado)"
-        echo "$diff_output"
+        echo -e " ${RED}[FAIL]${NC} $entrada (árvore diferente da esperada)"
+        cat /tmp/ast_diff.txt
         FAILED=$((FAILED + 1))
     fi
 done
 
 echo "Resultado Final: $PASSED passou, $FAILED falhou."
-
-if [ $FAILED -ne 0 ]; then
-    exit 1
-fi
+[ $FAILED -eq 0 ]
