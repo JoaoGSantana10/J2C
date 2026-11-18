@@ -5,10 +5,10 @@ BISON = bison
 
 all: parser
 
-parser: parser.y scanner.l symtab.c symtab.h ast.c ast.h
+parser: parser.y scanner.l symtab.c symtab.h semantico.c semantico.h ast.c ast.h
 	$(BISON) -d parser.y
 	$(FLEX) scanner.l
-	$(CC) $(CFLAGS) parser.tab.c lex.yy.c symtab.c ast.c -o parser
+	$(CC) $(CFLAGS) parser.tab.c lex.yy.c symtab.c semantico.c ast.c -o parser
 
 # Testes unitários de tokens do scanner
 test-scanner: parser.y scanner.l test_runner.c ast.c ast.h
