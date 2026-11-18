@@ -252,7 +252,7 @@ ASTNode* ast_create_identifier(char *name, int lineno);
 ASTNode* ast_create_literal(NodeType type, char *value, int lineno);
 
 /* Impressao e liberacao de memoria */
-void ast_print(const ASTNode *node, int indent);
+void ast_print(const ASTNode *root); /* Imprime a arvore com indentacao (├── / └──) */
 void ast_free(ASTNode *node);
 
 #endif

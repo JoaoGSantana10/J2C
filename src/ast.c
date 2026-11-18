@@ -233,183 +233,342 @@ ASTNode* ast_create_literal(NodeType type, char *value, int lineno) {
     return node;
 }
 
-static void print_indent(int indent) {
-    for (int i = 0; i < indent; i++) {
-        printf("  ");
+/* ------------------------------------------------------------------
+ * Impressao da AST
+ *
+ * Imprime a arvore com indentacao por nivel, para validar visualmente
+ * a construcao feita pelas acoes do parser. Exemplo:
+ *
+ *   Programa
+ *   └── Classe A
+ *       └── Funcao main
+ *           ├── Param String[] args
+ *           └── DeclVar int n
+ *               └── Literal 1
+ *
+ * Cada no imprime um rotulo (tipo do no + lexema) e depois seus filhos.
+ * Os filhos de um no sao descritos por "slots" (ChildSlot):
+ *   - slot sem rotulo: cada no da lista vira um filho direto;
+ *   - slot com rotulo: cria uma linha extra (ex.: "Condicao", "Corpo")
+ *     que agrupa a lista, deixando claro o papel de cada sub-arvore.
+ * Slots com lista vazia (NULL) nao sao impressos.
+ * ------------------------------------------------------------------ */
+
+#define AST_MAX_SLOTS 4
+
+#define BRANCH_MID   "├── "
+#define BRANCH_LAST  "└── "
+#define INDENT_MID   "│   "
+#define INDENT_LAST  "    "
+
+typedef struct {
+    const char *label;      /* NULL = os nos da lista sao filhos diretos */
+    const ASTNode *list;    /* lista encadeada por ->next (pode ser NULL) */
+} ChildSlot;
+
+/* Evita passar NULL para printf("%s") */
+static const char* safe_str(const char *s) {
+    return s ? s : "?";
+}
+
+static const char* bin_op_str(BinaryOpType op) {
+    switch (op) {
+        case AST_OP_ADD: return "+";
+        case AST_OP_SUB: return "-";
+        case AST_OP_MUL: return "*";
+        case AST_OP_DIV: return "/";
+        case AST_OP_MOD: return "%";
+        case AST_OP_EQ:  return "==";
+        case AST_OP_NE:  return "!=";
+        case AST_OP_LT:  return "<";
+        case AST_OP_GT:  return ">";
+        case AST_OP_LE:  return "<=";
+        case AST_OP_GE:  return ">=";
+        case AST_OP_AND: return "&&";
+        case AST_OP_OR:  return "||";
+    }
+    return "?";
+}
+
+static const char* unary_op_str(UnaryOpType op) {
+    switch (op) {
+        case AST_UN_INC: return "++";
+        case AST_UN_DEC: return "--";
+        case AST_UN_NEG: return "-";
+        case AST_UN_NOT: return "!";
+    }
+    return "?";
+}
+
+static const char* assign_op_str(AssignOpType op) {
+    switch (op) {
+        case AST_ASG_ASSIGN:       return "=";
+        case AST_ASG_PLUS_ASSIGN:  return "+=";
+        case AST_ASG_MINUS_ASSIGN: return "-=";
+    }
+    return "?";
+}
+
+static int is_literal(const ASTNode *node) {
+    if (!node) return 0;
+    switch (node->type) {
+        case NODE_LITERAL_INT:
+        case NODE_LITERAL_DOUBLE:
+        case NODE_LITERAL_FLOAT:
+        case NODE_LITERAL_LONG:
+        case NODE_LITERAL_CHAR:
+        case NODE_LITERAL_STRING:
+        case NODE_LITERAL_BOOL:
+            return 1;
+        default:
+            return 0;
     }
 }
 
-void ast_print(const ASTNode *node, int indent) {
-    while (node) {
-        print_indent(indent);
-        switch (node->type) {
-            case NODE_PROGRAM:
-                printf("Program (linha %d)\n", node->lineno);
-                ast_print(node->program.body, indent + 1);
-                break;
-            case NODE_CLASS:
-                printf("Class: %s (linha %d)\n", node->class_decl.name, node->lineno);
-                ast_print(node->class_decl.members, indent + 1);
-                break;
-            case NODE_VAR_DECL:
-                printf("VarDecl: %s %s (linha %d)\n", node->var_decl.type_name, node->var_decl.name, node->lineno);
-                if (node->var_decl.init) {
-                    print_indent(indent + 1);
-                    printf("Init:\n");
-                    ast_print(node->var_decl.init, indent + 2);
-                }
-                break;
-            case NODE_FUNC_DECL:
-                printf("FuncDecl: %s %s (linha %d)\n", node->func_decl.return_type, node->func_decl.name, node->lineno);
-                if (node->func_decl.params) {
-                    print_indent(indent + 1);
-                    printf("Params:\n");
-                    ast_print(node->func_decl.params, indent + 2);
-                }
-                if (node->func_decl.body) {
-                    ast_print(node->func_decl.body, indent + 1);
-                }
-                break;
-            case NODE_PARAM:
-                printf("Param: %s %s%s\n", node->param.type_name, node->param.name, node->param.is_array ? "[]" : "");
-                break;
-            case NODE_BLOCK:
-                printf("Block (linha %d)\n", node->lineno);
-                ast_print(node->block.statements, indent + 1);
-                break;
-            case NODE_ASSIGN:
-                printf("Assign: %s op=%d (linha %d)\n", node->assign.var_name, node->assign.op, node->lineno);
-                ast_print(node->assign.expr, indent + 1);
-                break;
-            case NODE_EXPR_STMT:
-                printf("ExprStmt (linha %d)\n", node->lineno);
-                ast_print(node->expr_stmt.expr, indent + 1);
-                break;
-                /*
-                    * Decisao sobre ++ e --:
-                    * - Sempre representados por um no NODE_UNARY_OP, com op = AST_UN_INC ou AST_UN_DEC,
-                    *   is_postfix indicando se o operador vem depois da variavel, e o operand
-                    *   sendo um no NODE_INDENTIFIER.
-                    * - Quando usados como comando (ex.: "i++;"), o no fica embrulhado em um
-                    *   NODE_EXPR_STMT, assim como as chamadas de funcao usadas como comando.
-                    * - Nao foi criado um no separado porque, como comando, ele não guarda
-                    *   nenhuma informação a mais (o valor da expressao e apenas descartado).
-                */
-            case NODE_IF:
-                printf("If (linha %d)\n", node->lineno);
-                print_indent(indent + 1);
-                printf("Condition:\n");
-                ast_print(node->if_stmt.condition, indent + 2);
-                print_indent(indent + 1);
-                printf("Then:\n");
-                ast_print(node->if_stmt.then_branch, indent + 2);
-                if (node->if_stmt.else_branch) {
-                    print_indent(indent + 1);
-                    printf("Else:\n");
-                    ast_print(node->if_stmt.else_branch, indent + 2);
-                }
-                break;
-            case NODE_WHILE:
-                printf("While (linha %d)\n", node->lineno);
-                print_indent(indent + 1);
-                printf("Condition:\n");
-                ast_print(node->while_stmt.condition, indent + 2);
-                print_indent(indent + 1);
-                printf("Body:\n");
-                ast_print(node->while_stmt.body, indent + 2);
-                break;
-            case NODE_DO_WHILE:
-                printf("DoWhile (linha %d)\n", node->lineno);
-                print_indent(indent + 1);
-                printf("Body:\n");
-                ast_print(node->do_while_stmt.body, indent + 2);
-                print_indent(indent + 1);
-                printf("Condition:\n");
-                ast_print(node->do_while_stmt.condition, indent + 2);
-                break;
-            case NODE_FOR:
-                printf("For (linha %d)\n", node->lineno);
-                if (node->for_stmt.init) {
-                    print_indent(indent + 1);
-                    printf("Init:\n");
-                    ast_print(node->for_stmt.init, indent + 2);
-                }
-                if (node->for_stmt.condition) {
-                    print_indent(indent + 1);
-                    printf("Condition:\n");
-                    ast_print(node->for_stmt.condition, indent + 2);
-                }
-                if (node->for_stmt.increment) {
-                    print_indent(indent + 1);
-                    printf("Increment:\n");
-                    ast_print(node->for_stmt.increment, indent + 2);
-                }
-                print_indent(indent + 1);
-                printf("Body:\n");
-                ast_print(node->for_stmt.body, indent + 2);
-                break;
-            case NODE_SWITCH:
-                printf("Switch (linha %d)\n", node->lineno);
-                print_indent(indent + 1);
-                printf("Expr:\n");
-                ast_print(node->switch_stmt.expr, indent + 2);
-                ast_print(node->switch_stmt.cases, indent + 1);
-                break;
-            case NODE_CASE:
-                printf("Case (linha %d)\n", node->lineno);    
-                print_indent(indent + 1);
-                printf("Value:\n");
-                ast_print(node->case_stmt.value, indent + 2);
-                ast_print(node->case_stmt.statements, indent + 1);
-                break;
-            case NODE_DEFAULT:
-                printf("Default (linha %d)\n", node->lineno);
-                ast_print(node->default_stmt.statements, indent + 1);
-                break;
-            case NODE_RETURN:
-                printf("Return (linha %d)\n", node->lineno);
-                if (node->return_stmt.expr) {
-                    ast_print(node->return_stmt.expr, indent + 1);
-                }
-                break;
-            case NODE_BREAK:
-                printf("Break (linha %d)\n", node->lineno);
-                break;
-            case NODE_CONTINUE:
-                printf("Continue (linha %d)\n", node->lineno);
-                break;
-            case NODE_BIN_OP:
-                printf("BinOp: op=%d (linha %d)\n", node->bin_op.op, node->lineno);
-                ast_print(node->bin_op.left, indent + 1);
-                ast_print(node->bin_op.right, indent + 1);
-                break;
-            case NODE_UNARY_OP:
-                printf("UnaryOp: op=%d postfix=%d (linha %d)\n", node->unary_op.op, node->unary_op.is_postfix, node->lineno);
-                ast_print(node->unary_op.operand, indent + 1);
-                break;
-            case NODE_CALL:
-                printf("Call: %s (linha %d)\n", node->call.func_name, node->lineno);
-                if (node->call.args) {
-                    ast_print(node->call.args, indent + 1);
-                }
-                break;
-            case NODE_NEW:
-                printf("New: %s (linha %d)\n", node->new_expr.class_name, node->lineno);
-                break;
-            case NODE_IDENTIFIER:
-                printf("Id: %s (linha %d)\n", node->identifier.name, node->lineno);
-                break;
-            case NODE_LITERAL_INT:
-            case NODE_LITERAL_DOUBLE:
-            case NODE_LITERAL_FLOAT:
-            case NODE_LITERAL_LONG:
-            case NODE_LITERAL_CHAR:
-            case NODE_LITERAL_STRING:
-            case NODE_LITERAL_BOOL:
-                printf("Literal: %s (linha %d)\n", node->literal.value, node->lineno);
-                break;
+/* Imprime o rotulo do no (sem quebra de linha) */
+static void print_label(const ASTNode *node) {
+    switch (node->type) {
+        case NODE_PROGRAM:
+            printf("Programa");
+            break;
+        case NODE_CLASS:
+            printf("Classe %s", safe_str(node->class_decl.name));
+            break;
+        case NODE_VAR_DECL:
+            printf("DeclVar %s %s", safe_str(node->var_decl.type_name), safe_str(node->var_decl.name));
+            break;
+        case NODE_FUNC_DECL:
+            printf("Funcao %s", safe_str(node->func_decl.name));
+            break;
+        case NODE_PARAM:
+            printf("Param %s%s %s", safe_str(node->param.type_name),
+                   node->param.is_array ? "[]" : "", safe_str(node->param.name));
+            break;
+        case NODE_BLOCK:
+            printf("Bloco");
+            break;
+        case NODE_ASSIGN:
+            printf("Atribuicao %s %s", safe_str(node->assign.var_name), assign_op_str(node->assign.op));
+            break;
+        case NODE_EXPR_STMT:
+            printf("ComandoExpr");
+            break;
+        case NODE_IF:
+            printf("If");
+            break;
+        case NODE_WHILE:
+            printf("While");
+            break;
+        case NODE_DO_WHILE:
+            printf("DoWhile");
+            break;
+        case NODE_FOR:
+            printf("For");
+            break;
+        case NODE_SWITCH:
+            printf("Switch");
+            break;
+        case NODE_CASE:
+            /* O valor do case e sempre um literal na gramatica: mostra direto no rotulo */
+            if (is_literal(node->case_stmt.value)) {
+                printf("Case %s", safe_str(node->case_stmt.value->literal.value));
+            } else {
+                printf("Case");
+            }
+            break;
+        case NODE_DEFAULT:
+            printf("Default");
+            break;
+        case NODE_RETURN:
+            printf("Return");
+            break;
+        case NODE_BREAK:
+            printf("Break");
+            break;
+        case NODE_CONTINUE:
+            printf("Continue");
+            break;
+        case NODE_BIN_OP:
+            printf("OpBinario %s", bin_op_str(node->bin_op.op));
+            break;
+        case NODE_UNARY_OP:
+            printf("OpUnario %s", unary_op_str(node->unary_op.op));
+            if (node->unary_op.op == AST_UN_INC || node->unary_op.op == AST_UN_DEC) {
+                printf(" (%s)", node->unary_op.is_postfix ? "posfixo" : "prefixo");
+            }
+            break;
+        case NODE_CALL:
+            printf("Chamada %s", safe_str(node->call.func_name));
+            break;
+        case NODE_NEW:
+            printf("New %s(%s)", safe_str(node->new_expr.class_name),
+                   node->new_expr.arg_name ? node->new_expr.arg_name : "");
+            break;
+        case NODE_IDENTIFIER:
+            printf("Id %s", safe_str(node->identifier.name));
+            break;
+        case NODE_LITERAL_INT:
+        case NODE_LITERAL_DOUBLE:
+        case NODE_LITERAL_FLOAT:
+        case NODE_LITERAL_LONG:
+        case NODE_LITERAL_CHAR:
+        case NODE_LITERAL_STRING:
+        case NODE_LITERAL_BOOL:
+            printf("Literal %s", safe_str(node->literal.value));
+            break;
+    }
+}
+
+/* Preenche os slots de filhos do no e retorna quantos foram usados */
+static int collect_children(const ASTNode *node, ChildSlot slots[AST_MAX_SLOTS]) {
+    int n = 0;
+
+    switch (node->type) {
+        case NODE_PROGRAM:
+            slots[n++] = (ChildSlot){ NULL, node->program.body };
+            break;
+        case NODE_CLASS:
+            slots[n++] = (ChildSlot){ NULL, node->class_decl.members };
+            break;
+        case NODE_VAR_DECL:
+            slots[n++] = (ChildSlot){ NULL, node->var_decl.init };
+            break;
+        case NODE_FUNC_DECL: {
+            /* O corpo de uma funcao e sempre um bloco: os comandos aparecem
+             * direto abaixo da funcao, sem a linha "Bloco" no meio. */
+            const ASTNode *body = node->func_decl.body;
+            slots[n++] = (ChildSlot){ NULL, node->func_decl.params };
+            slots[n++] = (ChildSlot){ NULL, (body && body->type == NODE_BLOCK) ? body->block.statements : body };
+            break;
         }
-        node = node->next;
+        case NODE_BLOCK:
+            slots[n++] = (ChildSlot){ NULL, node->block.statements };
+            break;
+        case NODE_ASSIGN:
+            slots[n++] = (ChildSlot){ NULL, node->assign.expr };
+            break;
+        case NODE_EXPR_STMT:
+            slots[n++] = (ChildSlot){ NULL, node->expr_stmt.expr };
+            break;
+        case NODE_IF:
+            slots[n++] = (ChildSlot){ "Condicao", node->if_stmt.condition };
+            slots[n++] = (ChildSlot){ "Entao", node->if_stmt.then_branch };
+            slots[n++] = (ChildSlot){ "Senao", node->if_stmt.else_branch };
+            break;
+        case NODE_WHILE:
+            slots[n++] = (ChildSlot){ "Condicao", node->while_stmt.condition };
+            slots[n++] = (ChildSlot){ "Corpo", node->while_stmt.body };
+            break;
+        case NODE_DO_WHILE:
+            slots[n++] = (ChildSlot){ "Corpo", node->do_while_stmt.body };
+            slots[n++] = (ChildSlot){ "Condicao", node->do_while_stmt.condition };
+            break;
+        case NODE_FOR:
+            slots[n++] = (ChildSlot){ "Init", node->for_stmt.init };
+            slots[n++] = (ChildSlot){ "Condicao", node->for_stmt.condition };
+            slots[n++] = (ChildSlot){ "Incremento", node->for_stmt.increment };
+            slots[n++] = (ChildSlot){ "Corpo", node->for_stmt.body };
+            break;
+        case NODE_SWITCH:
+            slots[n++] = (ChildSlot){ "Expressao", node->switch_stmt.expr };
+            slots[n++] = (ChildSlot){ NULL, node->switch_stmt.cases };
+            break;
+        case NODE_CASE:
+            if (!is_literal(node->case_stmt.value)) {
+                slots[n++] = (ChildSlot){ "Valor", node->case_stmt.value };
+            }
+            slots[n++] = (ChildSlot){ NULL, node->case_stmt.statements };
+            break;
+        case NODE_DEFAULT:
+            slots[n++] = (ChildSlot){ NULL, node->default_stmt.statements };
+            break;
+        case NODE_RETURN:
+            slots[n++] = (ChildSlot){ NULL, node->return_stmt.expr };
+            break;
+        case NODE_BIN_OP:
+            slots[n++] = (ChildSlot){ NULL, node->bin_op.left };
+            slots[n++] = (ChildSlot){ NULL, node->bin_op.right };
+            break;
+        case NODE_UNARY_OP:
+            slots[n++] = (ChildSlot){ NULL, node->unary_op.operand };
+            break;
+        case NODE_CALL:
+            slots[n++] = (ChildSlot){ NULL, node->call.args };
+            break;
+        default:
+            /* Folhas: BREAK, CONTINUE, NEW, IDENTIFIER e literais */
+            break;
+    }
+
+    return n;
+}
+
+/* Prefixo dos filhos = prefixo atual + "│   " (ou "    " se for o ultimo) */
+static char* extend_prefix(const char *prefix, int is_last) {
+    const char *ext = is_last ? INDENT_LAST : INDENT_MID;
+    char *result = malloc(strlen(prefix) + strlen(ext) + 1);
+    if (!result) {
+        fprintf(stderr, "Erro de alocacao de memoria ao imprimir a AST\n");
+        exit(EXIT_FAILURE);
+    }
+    strcpy(result, prefix);
+    strcat(result, ext);
+    return result;
+}
+
+static void print_subtree(const ASTNode *node, const char *prefix, int is_last);
+
+static void print_slots(const ChildSlot slots[], int count, const char *prefix) {
+    for (int i = 0; i < count; i++) {
+        if (!slots[i].list) continue;
+
+        /* Este slot e o ultimo se nenhum slot seguinte tiver filhos */
+        int has_more_slots = 0;
+        for (int j = i + 1; j < count; j++) {
+            if (slots[j].list) {
+                has_more_slots = 1;
+                break;
+            }
+        }
+
+        if (slots[i].label) {
+            int is_last = !has_more_slots;
+            printf("%s%s%s\n", prefix, is_last ? BRANCH_LAST : BRANCH_MID, slots[i].label);
+
+            char *child_prefix = extend_prefix(prefix, is_last);
+            ChildSlot group = { NULL, slots[i].list };
+            print_slots(&group, 1, child_prefix);
+            free(child_prefix);
+        } else {
+            for (const ASTNode *child = slots[i].list; child; child = child->next) {
+                print_subtree(child, prefix, !child->next && !has_more_slots);
+            }
+        }
+    }
+}
+
+static void print_children(const ASTNode *node, const char *prefix) {
+    ChildSlot slots[AST_MAX_SLOTS];
+    int count = collect_children(node, slots);
+    print_slots(slots, count, prefix);
+}
+
+static void print_subtree(const ASTNode *node, const char *prefix, int is_last) {
+    printf("%s%s", prefix, is_last ? BRANCH_LAST : BRANCH_MID);
+    print_label(node);
+    putchar('\n');
+
+    char *child_prefix = extend_prefix(prefix, is_last);
+    print_children(node, child_prefix);
+    free(child_prefix);
+}
+
+void ast_print(const ASTNode *root) {
+    /* A raiz e impressa sem conector; os filhos ganham "├──" / "└──" */
+    for (const ASTNode *node = root; node; node = node->next) {
+        print_label(node);
+        putchar('\n');
+        print_children(node, "");
     }
 }
 

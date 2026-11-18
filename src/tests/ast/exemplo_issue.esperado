@@ -1,0 +1,7 @@
+Análise sintática concluída com sucesso!
+Programa
+└── Classe A
+    └── Funcao main
+        ├── Param String[] args
+        └── DeclVar int n
+            └── Literal 1
