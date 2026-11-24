@@ -41,17 +41,22 @@ O projeto implementa todas as etapas clássicas do pipeline de compilação:
 - [x] **Tipos Primitivos:** `int`, `double`, `boolean`, `char`.
 - [x] **Estruturas de Controle:** `if`, `else`, `while`, `for`.
 - [x] **Funções e Métodos:** Parâmetros, valores de retorno e recursão.
-- [x] **Entrada e Saída:** Tradução automática de `System.out.println(...)` para `printf(...)` com formatação adequada.
-- [x] **Estruturas de Dados:** Arrays unidimensionais com gerenciamento básico de memória em C.
+- [x] **Entrada e Saída:** Reconhecimento de `System.out.println(...)`.
+- [x] **Estruturas de Dados:** Reconhecimento de arrays unidimensionais.
+- [ ] **Geração de Código Completa:** Tradução dos nós da AST para C.
 - [ ] **Orientação a Objetos:** Mapeamento de Classes e Objetos para `structs` e ponteiros em C.
+
+> **Estado atual da geração:** o gerador implementa `NODE_PROGRAM` e `NODE_CLASS`. Os demais nós reconhecidos pelo parser e pela análise semântica ainda não possuem tradução C.
 
 ---
 
 ## 🛠️ Arquitetura e Tecnologias
 
-- **Linguagem do Compilador:** Java (JDK 17+)
-- **Gerador de Parser/Analisador:** ANTLR4 (ou analisador sintático descendente recursivo próprio)
-- **Linguagem Alvo:** C (compatível com `GCC` / `Clang`)
+- **Linguagem do Compilador:** C
+- **Analisador Léxico:** Flex
+- **Analisador Sintático:** Bison
+- **Linguagem de Entrada:** Subconjunto de Java
+- **Linguagem Alvo:** C (compatível com GCC / Clang)
 
 ---
 
@@ -61,19 +66,28 @@ O projeto implementa todas as etapas clássicas do pipeline de compilação:
 
 Certifique-se de possuir os seguintes componentes instalados e configurados no seu ambiente de desenvolvimento:
 
-1. **Java Development Kit (JDK 17 ou superior)**
-   - Download: [OpenJDK](https://adoptium.net/) ou Oracle JDK
-   - Teste de instalação:
-     ```bash
-     java -version
-     ```
-
-2. **Compilador C (GCC ou Clang)**
+1. **Compilador C (GCC ou Clang)**
    - **Linux / macOS:** GCC ou Clang pré-instalado (ou via `sudo apt install build-essential`).
    - **Windows:** MinGW-w64, MSVC ou ambiente WSL.
    - Teste de instalação:
      ```bash
      gcc --version
+     ```
+
+2. **Flex, Bison e Make**
+   - **Debian/Ubuntu:**
+     ```bash
+     sudo apt install build-essential flex bison
+     ```
+   - **macOS:**
+     ```bash
+     brew install flex bison make
+     ```
+   - Teste de instalação:
+     ```bash
+     flex --version
+     bison --version
+     make --version
      ```
 
 ---
@@ -82,27 +96,58 @@ Certifique-se de possuir os seguintes componentes instalados e configurados no s
 
 1. **Clone o repositório do projeto:**
    ```bash
-   git clone [https://github.com/seu-usuario/java2c.git](https://github.com/seu-usuario/java2c.git)
-   cd j2c
+   git clone https://github.com/JoaoGSantana10/J2C.git
+   cd J2C/src
+   make
    ```
+
+Isso gera o executável `./parser`. Os artefatos gerados podem ser removidos com:
+
+```bash
+make clean
+```
+
+Para executar todas as suítes disponíveis:
+
+```bash
+make test
+```
+
+Para executar apenas os testes de geração de código:
+
+```bash
+make test_codegen
+```
 
 ### Compilando e Executando o Código C Gerado
 
 Para transpilar um programa escrito em Java para C:
 
 ```bash
-java -jar target/java2c.jar caminho/para/MeuPrograma.java -o saida/MeuPrograma.c
+./parser saida.c < caminho/para/MeuPrograma.java
 ```
 
 Para testar o resultado final no ambiente C:
 
 ```bash
 # Compilar o código C gerado
-gcc saida/MeuPrograma.c -o saida/MeuPrograma
+gcc saida.c -o MeuPrograma
 
 # Executar o programa
-./saida/MeuPrograma
+./MeuPrograma
 ```
+
+`./parser` recebe o caminho do arquivo C de saída como primeiro argumento e lê o código Java pela entrada padrão (`stdin`). Executar `./parser` sem argumento valida e imprime a AST, mas não gera código C.
+
+O gerador cria o arquivo de saída com este contrato mínimo:
+
+- um comentário indicando que o conteúdo foi gerado pelo J2C;
+- `#include <stdio.h>` e `#include <stdlib.h>`;
+- um `int main(void)`;
+- o nome da classe Java como comentário;
+- `return 0;` ao final da função.
+
+A geração atual é limitada aos nós `NODE_PROGRAM` e `NODE_CLASS`. Outros nós válidos da AST ainda não têm tradução implementada e fazem o gerador retornar erro sem criar ou preservar um arquivo C parcial.
 
 ## Equipe
 
