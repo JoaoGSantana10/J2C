@@ -5,10 +5,10 @@ BISON = bison
 
 all: parser
 
-parser: parser.y scanner.l symtab.c symtab.h semantico.c semantico.h ast.c ast.h
+parser: parser.y scanner.l symtab.c symtab.h semantico.c semantico.h ast.c ast.h codegen.c codegen.h
 	$(BISON) -d parser.y
 	$(FLEX) scanner.l
-	$(CC) $(CFLAGS) parser.tab.c lex.yy.c symtab.c semantico.c ast.c -o parser
+	$(CC) $(CFLAGS) parser.tab.c lex.yy.c symtab.c semantico.c ast.c codegen.c -o parser
 
 # Testes unitários de tokens do scanner
 test-scanner: parser.y scanner.l test_runner.c ast.c ast.h
@@ -30,10 +30,15 @@ test-parser: parser
 test-ast: parser
 	bash run_ast_tests.sh
 
+# Testes de geração de código
+test_codegen: test_codegen.c codegen.c ast.c
+	$(CC) $(CFLAGS) -o $@ $^
+	./test_codegen
+
 # Roda todos os testes do projeto
-test: test-scanner test-symtab test-parser test-ast
+test: test-scanner test-symtab test-parser test-ast test_codegen
 
 clean:
-	rm -f lex.yy.c parser.tab.c parser.tab.h parser unit_tests unit_tests_symtab
+	rm -f lex.yy.c parser.tab.c parser.tab.h parser unit_tests unit_tests_symtab test_codegen saida.c
 
-.PHONY: all test-scanner test-symtab test-parser test-ast test clean
+.PHONY: all test-scanner test-symtab test-parser test-ast test_codegen test clean
