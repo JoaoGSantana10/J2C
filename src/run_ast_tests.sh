@@ -23,7 +23,7 @@ for entrada in tests/ast/*.java; do
     # tr -d '\r' remove o final de linha do Windows (CRLF);
     # $(...) remove as linhas em branco do final dos dois textos.
     esperado_txt=$(tr -d '\r' < "$esperado")
-    obtido=$(./parser < "$entrada" 2>&1 | sed 's/ (linha [0-9]*)//')
+    obtido=$(./parser < "$entrada" 2>/dev/null | sed 's/ (linha [0-9]*)//')
 
     if diff -u <(echo "$esperado_txt") <(echo "$obtido") > /tmp/ast_diff.txt; then
         echo -e " ${GREEN}[PASS]${NC} $entrada"
