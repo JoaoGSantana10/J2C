@@ -188,6 +188,8 @@ static void visitar(Sem *s, const ASTNode *n)
     switch (n->type)
     {
     /* ---- estrutura ---- */
+    case NODE_COUNT: /* sentinela, nunca é um nó real */
+        break;
     case NODE_PROGRAM:
         visitar_lista(s, n->program.body);
         break;
