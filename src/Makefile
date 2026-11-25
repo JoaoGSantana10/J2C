@@ -31,14 +31,18 @@ test-ast: parser
 	bash run_ast_tests.sh
 
 # Testes de geração de código
-test_codegen: test_codegen.c codegen.c ast.c
-	$(CC) $(CFLAGS) -o $@ $^
+test-codegen: test_codegen.c codegen.c codegen.h ast.c ast.h
+	$(CC) $(CFLAGS) -o test_codegen test_codegen.c codegen.c ast.c
 	./test_codegen
 
+# Testes de ponta a ponta: Java -> ./parser -> C -> gcc
+test-codegen-e2e: parser
+	bash run_codegen_tests.sh
+
 # Roda todos os testes do projeto
-test: test-scanner test-symtab test-parser test-ast test_codegen
+test: test-scanner test-symtab test-parser test-ast test-codegen test-codegen-e2e
 
 clean:
 	rm -f lex.yy.c parser.tab.c parser.tab.h parser unit_tests unit_tests_symtab test_codegen saida.c
 
-.PHONY: all test-scanner test-symtab test-parser test-ast test_codegen test clean
+.PHONY: all test-scanner test-symtab test-parser test-ast test-codegen test-codegen-e2e test clean

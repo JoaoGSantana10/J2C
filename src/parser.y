@@ -383,7 +383,11 @@ int main(int argc, char **argv) {
             fprintf(stderr, "Foram encontrados %d erro(s) semântico(s)\n", erros_sem);
             return 1;
         }
-        return erro_gen ? 1 : 0;
+        if (erro_gen) {
+            fprintf(stderr, "Falha na geração de código C: '%s' não foi gerado\n", saida_c);
+            return 1;
+        }
+        return 0;
     }
 
     if (ast_raiz) {
