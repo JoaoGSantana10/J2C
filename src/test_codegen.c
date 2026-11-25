@@ -226,6 +226,11 @@ static void testes_variaveis(void)
               ast_create_var_decl(MOD_NONE, S("int"), S("x"), NULL, 2),
               ast_create_var_decl(MOD_NONE, S("int"), S("x"), NULL, 3))),
           "campo repetido falha");
+    CHECA(falha_com(ast_append(
+              ast_create_var_decl(MOD_NONE, S("int"), S("a"), lit_int("1"), 2),
+              ast_create_var_decl(MOD_NONE, S("int"), S("b"),
+                  ast_create_identifier(S("a"), 3), 3))),
+          "campo inicializado com outro campo falha");
 }
 
 static ASTNode *func(const char *ret, const char *nome, ASTNode *params,

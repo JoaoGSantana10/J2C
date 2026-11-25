@@ -373,6 +373,11 @@ static void gen_return(Ctx *c, const ASTNode *no, int nivel)
 
 /* --------------------------- classe -------------------------------- */
 
+static int eh_literal(const ASTNode *e)
+{
+    return e->type >= NODE_LITERAL_INT && e->type <= NODE_LITERAL_BOOL;
+}
+
 /* Nomes de campos e funções dividem o escopo global do C. */
 static int nome_repetido(Ctx *c, const ASTNode *membros)
 {
@@ -415,6 +420,13 @@ static void gen_class(Ctx *c, const ASTNode *no, int nivel)
 
     for (m = no->class_decl.members; m != NULL && !c->erro; m = m->next) {
         if (m->type == NODE_VAR_DECL) {
+            /* Em C, variável global só aceita inicializador constante. */
+            if (m->var_decl.init != NULL && !eh_literal(m->var_decl.init)) {
+                gen_erro(c, m->lineno, "campo '%s': inicializador de variável "
+                         "global precisa ser constante (literal)",
+                         m->var_decl.name ? m->var_decl.name : "");
+                break;
+            }
             gen_var_decl(c, m, nivel);
             ha_campos = 1;
         } else if (m->type == NODE_FUNC_DECL) {
