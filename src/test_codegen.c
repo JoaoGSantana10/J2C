@@ -74,6 +74,20 @@ static int falha_com(ASTNode *membros)
     return rc == CODEGEN_ERRO;
 }
 
+/* ---- casos que devem gerar `trecho`: AST montada com `membros` ------ */
+static int gera_contem(ASTNode *membros, const char *trecho)
+{
+    char buf[8192];
+    ASTNode *prog = programa(membros);
+    int ok = gera(prog, buf, sizeof buf) == CODEGEN_OK &&
+             strstr(buf, trecho) != NULL;
+
+    if (!ok)
+        printf("        esperado \"%s\" em:\n%s\n", trecho, buf);
+    ast_free(prog);
+    return ok;
+}
+
 static void testes_tipos(void)
 {
     CHECA(strcmp(codegen_tipo("int"), "int") == 0, "int -> int");
@@ -193,7 +207,7 @@ static void testes_variaveis(void)
             ast_create_literal(NODE_LITERAL_STRING, S("\"oi\""), 1), 1)),
         ast_create_var_decl(MOD_NONE, S("int"), S("g"), lit_int("1"), 1)));
     CHECA(gera(prog, buf, sizeof buf) == CODEGEN_OK, "todos os tipos ok");
-    CHECA(strstr(buf, "long long a = 5L;") != NULL, "long long");
+    CHECA(strstr(buf, "long long a = 5LL;") != NULL, "long long (5L -> 5LL)");
     CHECA(strstr(buf, "float b = 1.5f;") != NULL, "float");
     CHECA(strstr(buf, "bool c = true;") != NULL, "bool");
     CHECA(strstr(buf, "char d = 'z';") != NULL, "char");
@@ -219,9 +233,10 @@ static void testes_variaveis(void)
     CHECA(falha_com(ast_create_var_decl(MOD_NONE, S("int"), S("bool"),
                                         NULL, 2)),
           "nome 'bool' falha");
-    CHECA(falha_com(ast_create_var_decl(MOD_NONE, S("int"), S("x"),
-              ast_create_bin_op(AST_OP_ADD, lit_int("1"), lit_int("2"), 2), 2)),
-          "inicializador complexo (fora desta issue) falha");
+    CHECA(gera_contem(ast_create_var_decl(MOD_NONE, S("int"), S("x"),
+              ast_create_bin_op(AST_OP_ADD, lit_int("1"), lit_int("2"), 2), 2),
+              "int x = 1 + 2;\n"),
+          "campo com expressão constante (1 + 2) é aceito");
     CHECA(falha_com(ast_append(
               ast_create_var_decl(MOD_NONE, S("int"), S("x"), NULL, 2),
               ast_create_var_decl(MOD_NONE, S("int"), S("x"), NULL, 3))),
@@ -380,6 +395,233 @@ static void testes_main(void)
           "main retornando valor falha");
 }
 
+/* ------------------------- expressões ------------------------------ */
+
+static ASTNode *id(const char *n) { return ast_create_identifier(S(n), 1); }
+static ASTNode *lit(NodeType t, const char *v)
+{
+    return ast_create_literal(t, S(v), 1);
+}
+static ASTNode *bin(BinaryOpType op, ASTNode *l, ASTNode *r)
+{
+    return ast_create_bin_op(op, l, r, 1);
+}
+static ASTNode *un(UnaryOpType op, int posfixo, ASTNode *o)
+{
+    return ast_create_unary_op(op, posfixo, o, 1);
+}
+static ASTNode *pint(const char *n) { return ast_create_param(S("int"), S(n), 0, 1); }
+static ASTNode *decl(const char *tipo, const char *n, ASTNode *init)
+{
+    return ast_create_var_decl(MOD_NONE, S(tipo), S(n), init, 1);
+}
+static ASTNode *cmd(ASTNode *e) { return ast_create_expr_stmt(e, 1); }
+
+/* int f(int a, int b, int c, int i, int j) { <stmts> return 0; } */
+static ASTNode *func_abc(ASTNode *stmts)
+{
+    return func("int", "f",
+        ast_append(ast_append(ast_append(ast_append(pint("a"), pint("b")),
+                   pint("c")), pint("i")), pint("j")),
+        ast_append(stmts, ast_create_return(lit_int("0"), 1)));
+}
+
+/* Retorna o membro f(...) com `int r = <e>;` no corpo, gerado com sucesso
+ * e contendo `trecho`. */
+static int expr_gera(ASTNode *e, const char *trecho)
+{
+    return gera_contem(func_abc(decl("int", "r", e)), trecho);
+}
+
+static int expr_falha(ASTNode *e)
+{
+    return falha_com(func_abc(decl("int", "r", e)));
+}
+
+static void testes_expressoes(void)
+{
+    ASTNode *prog;
+
+    /* Exemplo positivo da issue:
+     *   int exemplo(int a, int b, int c, int x, int y) {
+     *       int resultado = a + b * c;  resultado += 2;  resultado++;
+     *       calcular(x, y + 1);  return resultado;
+     *   }
+     *   void calcular(int p, int q) { } */
+    prog = programa(ast_append(
+        func("int", "exemplo",
+            ast_append(ast_append(ast_append(ast_append(pint("a"), pint("b")),
+                       pint("c")), pint("x")), pint("y")),
+            ast_append(ast_append(ast_append(ast_append(
+                decl("int", "resultado",
+                     bin(AST_OP_ADD, id("a"), bin(AST_OP_MUL, id("b"), id("c")))),
+                ast_create_assign(AST_ASG_PLUS_ASSIGN, S("resultado"),
+                                  lit_int("2"), 1)),
+                cmd(un(AST_UN_INC, 1, id("resultado")))),
+                cmd(ast_create_call(S("calcular"),
+                    ast_append(id("x"), bin(AST_OP_ADD, id("y"), lit_int("1"))),
+                    1))),
+                ast_create_return(id("resultado"), 1))),
+        func("void", "calcular", ast_append(pint("p"), pint("q")), NULL)));
+    {
+        char buf[8192];
+
+        CHECA(gera(prog, buf, sizeof buf) == CODEGEN_OK, "exemplo da issue ok");
+        CHECA(strstr(buf, "    int resultado = a + (b * c);\n") != NULL,
+              "a + b * c -> a + (b * c)");
+        CHECA(strstr(buf, "    resultado += 2;\n") != NULL, "resultado += 2;");
+        CHECA(strstr(buf, "    resultado++;\n") != NULL, "resultado++;");
+        CHECA(strstr(buf, "    calcular(x, y + 1);\n") != NULL,
+              "calcular(x, y + 1);");
+    }
+    CHECA(compila(prog), "exemplo da issue compila no gcc");
+    ast_free(prog);
+
+    /* Precedência e associatividade: os parênteses seguem a AST */
+    CHECA(expr_gera(bin(AST_OP_MUL, bin(AST_OP_ADD, id("a"), id("b")), id("c")),
+                    "int r = (a + b) * c;"), "(a + b) * c mantém os parênteses");
+    CHECA(expr_gera(bin(AST_OP_SUB, bin(AST_OP_SUB, id("a"), id("b")), id("c")),
+                    "int r = (a - b) - c;"), "a - b - c associa à esquerda");
+    CHECA(expr_gera(bin(AST_OP_SUB, id("a"), bin(AST_OP_SUB, id("b"), id("c"))),
+                    "int r = a - (b - c);"), "a - (b - c) mantém o agrupamento");
+    CHECA(expr_gera(bin(AST_OP_DIV, bin(AST_OP_DIV, id("a"), id("b")), id("c")),
+                    "int r = (a / b) / c;"), "a / b / c associa à esquerda");
+    CHECA(expr_gera(bin(AST_OP_OR,
+                        bin(AST_OP_AND, bin(AST_OP_LT, id("a"), id("b")),
+                                        bin(AST_OP_EQ, id("c"), id("i"))),
+                        un(AST_UN_NOT, 0, id("j"))),
+                    "int r = ((a < b) && (c == i)) || !j;"),
+          "lógicos e relacionais preservam a precedência");
+
+    /* Unários: prefixo x pósfixo */
+    CHECA(gera_contem(func_abc(ast_append(ast_append(ast_append(
+              cmd(un(AST_UN_INC, 0, id("i"))), cmd(un(AST_UN_INC, 1, id("i")))),
+              cmd(un(AST_UN_DEC, 0, id("j")))), cmd(un(AST_UN_DEC, 1, id("j"))))),
+              "    ++i;\n    i++;\n    --j;\n    j--;\n"),
+          "++i, i++, --j e j-- (is_postfix respeitado)");
+    CHECA(expr_gera(bin(AST_OP_ADD, un(AST_UN_INC, 1, id("i")),
+                                    un(AST_UN_DEC, 0, id("j"))),
+                    "int r = i++ + --j;"), "i++ + --j");
+    CHECA(expr_gera(bin(AST_OP_MUL, un(AST_UN_NEG, 0, id("a")), id("b")),
+                    "int r = -a * b;"), "-a * b");
+    CHECA(expr_gera(un(AST_UN_NEG, 0, bin(AST_OP_ADD, id("a"), id("b"))),
+                    "int r = -(a + b);"), "-(a + b)");
+    CHECA(expr_gera(un(AST_UN_NEG, 0, un(AST_UN_NEG, 0, id("a"))),
+                    "int r = -(-a);"), "-(-a) não vira --a");
+
+    /* Literais adaptados ao C */
+    prog = programa(func("void", "literais", NULL, ast_append(ast_append(
+        ast_append(ast_append(ast_append(ast_append(ast_append(ast_append(
+            decl("long", "l", lit(NODE_LITERAL_LONG, "10L")),
+            decl("double", "d1", lit(NODE_LITERAL_DOUBLE, "3.14d"))),
+            decl("double", "d2", lit(NODE_LITERAL_DOUBLE, "5d"))),
+            decl("float", "f1", lit(NODE_LITERAL_FLOAT, "5f"))),
+            decl("float", "f2", lit(NODE_LITERAL_FLOAT, "2.5F"))),
+            decl("char", "c1", lit(NODE_LITERAL_CHAR, "'\\'"))),
+            decl("char", "c2", lit(NODE_LITERAL_CHAR, "'''"))),
+            decl("boolean", "b", lit(NODE_LITERAL_BOOL, "false"))),
+            decl("String", "s", lit(NODE_LITERAL_STRING,
+                                    "\"a\\n\\u0041\\400?\?=\\\"")))));
+    {
+        char buf[8192];
+
+        CHECA(gera(prog, buf, sizeof buf) == CODEGEN_OK, "literais ok");
+        CHECA(strstr(buf, "long long l = 10LL;") != NULL, "10L -> 10LL");
+        CHECA(strstr(buf, "double d1 = 3.14;") != NULL, "3.14d -> 3.14");
+        CHECA(strstr(buf, "double d2 = 5.0;") != NULL, "5d -> 5.0");
+        CHECA(strstr(buf, "float f1 = 5.0f;") != NULL, "5f -> 5.0f");
+        CHECA(strstr(buf, "float f2 = 2.5f;") != NULL, "2.5F -> 2.5f");
+        CHECA(strstr(buf, "char c1 = '\\\\';") != NULL, "'\\' -> '\\\\'");
+        CHECA(strstr(buf, "char c2 = '\\'';") != NULL, "''' -> '\\''");
+        CHECA(strstr(buf, "bool b = false;") != NULL, "false -> false");
+        /* \n mantido, \u0041 -> \101, \400 (Java: \40 + '0') -> \0400,
+         * ??= sem trígrafo, barra final escapada */
+        CHECA(strstr(buf, "char *s = \"a\\n\\101\\0400?\\?=\\\\\";") != NULL,
+              "String: \\n, \\u, octal, trígrafo e barra final");
+    }
+    CHECA(compila(prog), "literais compilam no gcc");
+    ast_free(prog);
+
+    /* Campos aceitam expressões constantes */
+    CHECA(gera_contem(decl("int", "k", un(AST_UN_NEG, 0, lit_int("1"))),
+                      "int k = -1;\n"), "campo int k = -1 é aceito");
+    CHECA(falha_com(decl("int", "k", ast_create_call(S("g"), NULL, 1))),
+          "campo inicializado com chamada falha");
+
+    /* --- casos negativos da issue --- */
+    CHECA(expr_falha(bin((BinaryOpType)99, id("a"), id("b"))),
+          "operador binário desconhecido falha");
+    CHECA(expr_falha(un((UnaryOpType)99, 0, id("a"))),
+          "operador unário desconhecido falha");
+    CHECA(expr_falha(ast_create_literal(NODE_LITERAL_INT, NULL, 1)),
+          "literal sem valor falha");
+    CHECA(expr_falha(ast_create_identifier(S(""), 1)),
+          "identificador vazio falha");
+    CHECA(expr_falha(ast_create_call(S(""), NULL, 1)), "chamada sem nome falha");
+    CHECA(expr_falha(un(AST_UN_NEG, 0, NULL)), "unário sem operando falha");
+    CHECA(expr_falha(bin(AST_OP_ADD, id("a"), NULL)),
+          "binário com apenas um filho falha");
+    CHECA(expr_falha(ast_create_block(NULL, 1)),
+          "expressão mal formada (bloco como valor) falha");
+    CHECA(expr_falha(ast_create_new(NULL, NULL, 1)), "new sem classe falha");
+    CHECA(expr_falha(ast_create_new(S("Scanner"), S("System.in"), 1)),
+          "new Scanner(System.in) é rejeitado (issue de E/S)");
+    CHECA(falha_com(func_abc(cmd(ast_create_call(S("System.out.println"),
+              lit(NODE_LITERAL_STRING, "\"oi\""), 1)))),
+          "chamada qualificada não é descartada: falha");
+    CHECA(expr_falha(un(AST_UN_INC, 1, lit_int("5"))), "5++ falha");
+
+    /* Literais inválidos */
+    CHECA(expr_falha(lit(NODE_LITERAL_INT, "09")), "literal octal 09 falha");
+    CHECA(expr_falha(lit(NODE_LITERAL_CHAR, "'ab'")), "char 'ab' falha");
+    CHECA(expr_falha(lit(NODE_LITERAL_BOOL, "verdadeiro")),
+          "boolean inválido falha");
+    CHECA(falha_com(func_abc(decl("String", "s",
+              lit(NODE_LITERAL_STRING, "\"\\q\"")))),
+          "escape \\q inválido falha");
+    CHECA(falha_com(func_abc(decl("String", "s",
+              lit(NODE_LITERAL_STRING, "\"\\u00\"")))),
+          "\\u incompleto falha");
+
+    /* Chamadas */
+    CHECA(falha_com(ast_append(func_abc(cmd(ast_create_call(S("g"),
+              id("a"), 1))), func("void", "g", ast_append(pint("p"), pint("q")),
+              NULL))),
+          "chamada com argumentos a menos falha");
+    CHECA(falha_com(ast_append(func_abc(decl("int", "r",
+              ast_create_call(S("g"), NULL, 1))), func("void", "g", NULL, NULL))),
+          "função void usada como valor falha");
+    CHECA(falha_com(func_abc(cmd(ast_create_call(S("h"), NULL, 1)))),
+          "função não declarada falha");
+    CHECA(expr_falha(id("f")), "nome de função usado como valor falha");
+    CHECA(falha_com(func_abc(ast_create_assign(AST_ASG_ASSIGN, S("f"),
+              lit_int("1"), 1))), "atribuição a função falha");
+    CHECA(falha_com(ast_append(func("int", "g", NULL, ast_append(
+              decl("int", "h", lit_int("1")),
+              ast_create_return(ast_create_call(S("h"), NULL, 1), 1))),
+              func("int", "h", NULL, ast_create_return(lit_int("1"), 1)))),
+          "variável local que esconde função falha na chamada");
+    CHECA(falha_com(func_abc(cmd(id("a")))), "comando sem efeito (a;) falha");
+
+    /* Traduções que mudariam o significado */
+    CHECA(falha_com(func_abc(decl("String", "s",
+              bin(AST_OP_ADD, lit(NODE_LITERAL_STRING, "\"n=\""), id("a"))))),
+          "concatenação de String com + falha");
+    CHECA(falha_com(func_abc(ast_append(decl("String", "s",
+              lit(NODE_LITERAL_STRING, "\"x\"")),
+              ast_create_assign(AST_ASG_PLUS_ASSIGN, S("s"),
+                                lit(NODE_LITERAL_STRING, "\"y\""), 1)))),
+          "String += falha");
+    CHECA(expr_falha(bin(AST_OP_MOD, lit(NODE_LITERAL_DOUBLE, "5.5"),
+                         lit_int("2"))), "% com double falha");
+    CHECA(expr_falha(bin(AST_OP_ADD, un(AST_UN_INC, 1, id("i")), id("i"))),
+          "i++ + i (indefinido em C) falha");
+    CHECA(falha_com(func_abc(ast_create_assign(AST_ASG_ASSIGN, S("i"),
+              un(AST_UN_INC, 1, id("i")), 1))), "i = i++ falha");
+    CHECA(expr_gera(bin(AST_OP_ADD, un(AST_UN_INC, 1, id("i")), id("j")),
+                    "int r = i++ + j;"), "i++ + j (variáveis diferentes) é aceito");
+}
+
 static void testes_falha_sem_arquivo(void)
 {
     ASTNode *prog;
@@ -409,6 +651,7 @@ int main(void)
     testes_variaveis();
     testes_funcoes();
     testes_main();
+    testes_expressoes();
     testes_falha_sem_arquivo();
 
     printf(falhas ? "\n%d falha(s)\n" : "\ntodos os testes passaram\n", falhas);

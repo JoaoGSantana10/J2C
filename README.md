@@ -46,7 +46,7 @@ O projeto implementa todas as etapas clássicas do pipeline de compilação:
 - [ ] **Geração de Código Completa:** Tradução dos nós da AST para C.
 - [ ] **Orientação a Objetos:** Mapeamento de Classes e Objetos para `structs` e ponteiros em C.
 
-> **Estado atual da geração:** o gerador implementa `NODE_PROGRAM`, `NODE_CLASS`, `NODE_VAR_DECL`, `NODE_FUNC_DECL`, `NODE_PARAM`, `NODE_BLOCK` e `NODE_RETURN` (este com valor simples: literal ou identificador). Os demais nós reconhecidos pelo parser e pela análise semântica ainda não possuem tradução C.
+> **Estado atual da geração:** o gerador implementa `NODE_PROGRAM`, `NODE_CLASS`, `NODE_VAR_DECL`, `NODE_FUNC_DECL`, `NODE_PARAM`, `NODE_BLOCK`, `NODE_RETURN`, as expressões (`NODE_BIN_OP`, `NODE_UNARY_OP`, `NODE_CALL`, `NODE_IDENTIFIER` e literais), `NODE_ASSIGN` e `NODE_EXPR_STMT`. `NODE_NEW` e chamadas qualificadas (`System.out.println`) são rejeitados com erro até a issue de entrada e saída. As estruturas de controle (`if`, laços, `switch`) ainda não possuem tradução C.
 
 ---
 
@@ -149,13 +149,31 @@ O gerador cria o arquivo de saída com este contrato:
 
 Mapeamento de tipos: `int`→`int`, `long`→`long long`, `float`→`float`, `double`→`double`, `boolean`→`bool`, `char`→`char`, `void`→`void`, `String`→`char *` e `String[]`→`char **`. Tipos de classe ainda não são suportados e geram erro.
 
-A geração atual cobre declarações, tipos e funções. Outros nós válidos da AST (expressões, `if`, laços etc.) ainda não têm tradução e fazem o gerador retornar erro sem criar ou preservar um arquivo C parcial. Também é erro: nome ausente ou igual a palavra reservada de C, nome repetido entre campos e funções (C não tem sobrecarga), parâmetro ou variável `void` e `main` com assinatura diferente de `main(String[] args)`.
+A geração atual cobre declarações, tipos, funções e expressões. Outros nós válidos da AST (`if`, laços, `switch` etc.) ainda não têm tradução e fazem o gerador retornar erro sem criar ou preservar um arquivo C parcial. Também é erro: nome ausente ou igual a palavra reservada de C, nome repetido entre campos e funções (C não tem sobrecarga), parâmetro ou variável `void` e `main` com assinatura diferente de `main(String[] args)`.
+
+#### Expressões
+
+- **Precedência e associatividade:** toda subexpressão binária é escrita entre parênteses, seguindo a AST. `a + b * c` vira `a + (b * c)` e `a - b - c` vira `(a - b) - c`, então o significado não depende da tabela de precedência do C.
+- **Unários:** `++`/`--` respeitam prefixo e pósfixo (`is_postfix`). Um unário aplicado a outro unário ou a uma expressão binária ganha parênteses: `-(-a)`, `-(a + b)`.
+- **Literais:** `10L` vira `10LL`; `3.14d` vira `3.14` e `5d` vira `5.0`; `5f` vira `5.0f`; `true`/`false` vêm de `<stdbool.h>`; `'\'` e `'''` recebem escape. Em `String`, `\uXXXX` vira os bytes UTF-8 em octal e octais do Java são normalizados para 3 dígitos.
+- **Chamadas e atribuições:** chamadas simples (`f(a, b + 1)`) e `=`, `+=`, `-=`. O número de argumentos é conferido com a declaração da função.
+- **Campos:** aceitam inicializadores constantes (literais e operadores, como `-1` ou `60 * 60`), porque variável global em C só aceita constante.
+
+São rejeitados com erro, em vez de gerar C que compila com outro significado:
+
+- concatenação de `String` com `+` ou `+=` (em C seria aritmética de ponteiro);
+- `%` com `float`/`double` (não existe em C);
+- `++`/`--` em uma variável usada de novo na mesma expressão, como `i++ + i` ou `i = i++` (Java avalia da esquerda para a direita; em C é comportamento indefinido);
+- função `void` usada como valor, nome de função usado como variável e variável local com o mesmo nome de uma função chamada;
+- `new` (classes ainda não são traduzidas; `new Scanner(System.in)` fica para a issue de entrada e saída) e chamadas qualificadas como `System.out.println` (mesma issue).
 
 Para rodar os testes de ponta a ponta (Java → C → `gcc`):
 
 ```bash
 make test-codegen-e2e
 ```
+
+Além de compilar o C gerado, esses testes executam `tests/codegen/execucao/*.java`: o C gerado é linkado com um driver em C (arquivo `.c` de mesmo nome) que chama as funções e confere se o resultado é o mesmo do Java.
 
 ## Equipe
 

@@ -2,6 +2,9 @@
 # Ponta a ponta: Java -> ./parser -> C -> gcc.
 # Validos: o parser deve gerar o C e o gcc deve compilá-lo sem avisos.
 # Invalidos: o parser deve falhar e nao deixar arquivo C (nem .tmp).
+# Execucao: o C gerado e linkado com um driver (X.c ao lado de X.java) que
+#   chama as funcoes e confere se o resultado e o mesmo do Java. A main
+#   gerada e renomeada (-Dmain=j2c_main) para a main do driver rodar.
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -38,6 +41,25 @@ for entrada in tests/codegen/invalidos/*.java; do
         PASSED=$((PASSED + 1))
     else
         echo -e " ${RED}[FAIL]${NC} $entrada (rc=$rc, sobrou arquivo?)"
+        FAILED=$((FAILED + 1))
+    fi
+done
+
+echo -e "\n--- Testes de Execução (C gerado deve calcular o mesmo que o Java) ---"
+for entrada in tests/codegen/execucao/*.java; do
+    [ -f "$entrada" ] || continue
+    driver="${entrada%.java}.c"
+    base="$SAIDA/exec_$(basename "${entrada%.java}")"
+    if ./parser "$base.c" < "$entrada" > /dev/null 2> "$SAIDA/erro.txt" \
+       && gcc -Wall -Wno-unused-variable -Werror -Dmain=j2c_main \
+              -c "$base.c" -o "$base.o" 2> "$SAIDA/gcc.txt" \
+       && gcc -Wall -Werror "$driver" "$base.o" -o "$base" 2>> "$SAIDA/gcc.txt" \
+       && "$base" > "$SAIDA/exec.txt"; then
+        echo -e " ${GREEN}[PASS]${NC} $entrada"
+        PASSED=$((PASSED + 1))
+    else
+        echo -e " ${RED}[FAIL]${NC} $entrada"
+        cat "$SAIDA/erro.txt" "$SAIDA/gcc.txt" "$SAIDA/exec.txt" 2>/dev/null
         FAILED=$((FAILED + 1))
     fi
 done
