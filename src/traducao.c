@@ -296,6 +296,37 @@ void traduzir_comando(FILE *out, const ASTNode *node, int indent) {
             traduzir_for(out, node, indent);
             break;
 
+        case NODE_SWITCH: {
+            emit_indent(out, indent);
+            fprintf(out, "switch (");
+            traduzir_expressao(out, node->switch_stmt.expr);
+            fprintf(out, ") {\n");
+            for (const ASTNode *c = node->switch_stmt.cases; c; c = c->next) {
+                traduzir_comando(out, c, indent + 1);
+            }
+            emit_indent(out, indent);
+            fprintf(out, "}\n");
+            break;
+        }
+
+        case NODE_CASE:
+            emit_indent(out, indent);
+            fprintf(out, "case ");
+            traduzir_expressao(out, node->case_stmt.value);
+            fprintf(out, ":\n");
+            for (const ASTNode *s = node->case_stmt.statements; s; s = s->next) {
+                traduzir_comando(out, s, indent + 1);
+            }
+            break;
+
+        case NODE_DEFAULT:
+            emit_indent(out, indent);
+            fprintf(out, "default:\n");
+            for (const ASTNode *s = node->default_stmt.statements; s; s = s->next) {
+                traduzir_comando(out, s, indent + 1);
+            }
+            break;
+
         default:
             break;
     }
