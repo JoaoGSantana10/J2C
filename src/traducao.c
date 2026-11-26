@@ -109,6 +109,53 @@ void traduzir_expressao(FILE *out, const ASTNode *node) {
     }
 }
 
+static void traduzir_corpo_comando(FILE *out, const ASTNode *body, int indent) {
+    if (!body) {
+        fprintf(out, " {}\n");
+        return;
+    }
+    if (body->type == NODE_BLOCK) {
+        fprintf(out, "{\n");
+        for (const ASTNode *s = body->block.statements; s; s = s->next) {
+            traduzir_comando(out, s, indent + 1);
+        }
+        emit_indent(out, indent);
+        fprintf(out, "}");
+    } else {
+        fprintf(out, "\n");
+        traduzir_comando(out, body, indent + 1);
+    }
+}
+
+static void traduzir_if(FILE *out, const ASTNode *node, int indent) {
+    fprintf(out, "if (");
+    traduzir_expressao(out, node->if_stmt.condition);
+    fprintf(out, ") ");
+    traduzir_corpo_comando(out, node->if_stmt.then_branch, indent);
+
+    if (node->if_stmt.else_branch) {
+        if (node->if_stmt.then_branch && node->if_stmt.then_branch->type == NODE_BLOCK) {
+            fprintf(out, " else ");
+        } else {
+            emit_indent(out, indent);
+            fprintf(out, "else ");
+        }
+
+        if (node->if_stmt.else_branch->type == NODE_IF) {
+            traduzir_if(out, node->if_stmt.else_branch, indent);
+        } else {
+            traduzir_corpo_comando(out, node->if_stmt.else_branch, indent);
+            if (node->if_stmt.else_branch->type == NODE_BLOCK) {
+                fprintf(out, "\n");
+            }
+        }
+    } else {
+        if (node->if_stmt.then_branch && node->if_stmt.then_branch->type == NODE_BLOCK) {
+            fprintf(out, "\n");
+        }
+    }
+}
+
 void traduzir_comando(FILE *out, const ASTNode *node, int indent) {
     if (!node) return;
 
@@ -173,6 +220,11 @@ void traduzir_comando(FILE *out, const ASTNode *node, int indent) {
             } else {
                 fprintf(out, "return;\n");
             }
+            break;
+
+        case NODE_IF:
+            emit_indent(out, indent);
+            traduzir_if(out, node, indent);
             break;
 
         default:
