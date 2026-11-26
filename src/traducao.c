@@ -21,6 +21,7 @@ void traduzir_expressao(FILE *out, const ASTNode *node) {
         case NODE_IDENTIFIER:
             fprintf(out, "%s", node->identifier.name);
             break;
+
         case NODE_LITERAL_INT:
         case NODE_LITERAL_DOUBLE:
         case NODE_LITERAL_FLOAT:
@@ -29,9 +30,80 @@ void traduzir_expressao(FILE *out, const ASTNode *node) {
         case NODE_LITERAL_STRING:
             fprintf(out, "%s", node->literal.value);
             break;
+
         case NODE_LITERAL_BOOL:
             fprintf(out, "%s", (strcmp(node->literal.value, "true") == 0) ? "true" : "false");
             break;
+
+        case NODE_BIN_OP: {
+            const char *op_str = "+";
+            switch (node->bin_op.op) {
+                case AST_OP_ADD: op_str = "+"; break;
+                case AST_OP_SUB: op_str = "-"; break;
+                case AST_OP_MUL: op_str = "*"; break;
+                case AST_OP_DIV: op_str = "/"; break;
+                case AST_OP_MOD: op_str = "%"; break;
+                case AST_OP_EQ:  op_str = "=="; break;
+                case AST_OP_NE:  op_str = "!="; break;
+                case AST_OP_LT:  op_str = "<"; break;
+                case AST_OP_GT:  op_str = ">"; break;
+                case AST_OP_LE:  op_str = "<="; break;
+                case AST_OP_GE:  op_str = ">="; break;
+                case AST_OP_AND: op_str = "&&"; break;
+                case AST_OP_OR:  op_str = "||"; break;
+            }
+            fprintf(out, "(");
+            traduzir_expressao(out, node->bin_op.left);
+            fprintf(out, " %s ", op_str);
+            traduzir_expressao(out, node->bin_op.right);
+            fprintf(out, ")");
+            break;
+        }
+
+        case NODE_UNARY_OP: {
+            const char *op_str = "!";
+            switch (node->unary_op.op) {
+                case AST_UN_INC: op_str = "++"; break;
+                case AST_UN_DEC: op_str = "--"; break;
+                case AST_UN_NEG: op_str = "-"; break;
+                case AST_UN_NOT: op_str = "!"; break;
+            }
+            if (node->unary_op.is_postfix) {
+                traduzir_expressao(out, node->unary_op.operand);
+                fprintf(out, "%s", op_str);
+            } else {
+                fprintf(out, "%s", op_str);
+                traduzir_expressao(out, node->unary_op.operand);
+            }
+            break;
+        }
+
+        case NODE_CALL: {
+            if (strcmp(node->call.func_name, "System.out.println") == 0 ||
+                strcmp(node->call.func_name, "System.out.print") == 0) {
+                int newline = (strcmp(node->call.func_name, "System.out.println") == 0);
+                if (node->call.args && node->call.args->type == NODE_LITERAL_STRING) {
+                    fprintf(out, "printf(\"%%s%s\", ", newline ? "\\n" : "");
+                    traduzir_expressao(out, node->call.args);
+                    fprintf(out, ")");
+                } else if (node->call.args) {
+                    fprintf(out, "printf(\"%%d%s\", ", newline ? "\\n" : "");
+                    traduzir_expressao(out, node->call.args);
+                    fprintf(out, ")");
+                } else {
+                    fprintf(out, "printf(\"%s\")", newline ? "\\n" : "");
+                }
+            } else {
+                fprintf(out, "%s(", node->call.func_name);
+                for (const ASTNode *arg = node->call.args; arg; arg = arg->next) {
+                    traduzir_expressao(out, arg);
+                    if (arg->next) fprintf(out, ", ");
+                }
+                fprintf(out, ")");
+            }
+            break;
+        }
+
         default:
             break;
     }
@@ -59,6 +131,26 @@ void traduzir_comando(FILE *out, const ASTNode *node, int indent) {
                 fprintf(out, " = ");
                 traduzir_expressao(out, node->var_decl.init);
             }
+            fprintf(out, ";\n");
+            break;
+
+        case NODE_ASSIGN: {
+            emit_indent(out, indent);
+            const char *op_str = "=";
+            if (node->assign.op == AST_ASG_PLUS_ASSIGN) {
+                op_str = "+=";
+            } else if (node->assign.op == AST_ASG_MINUS_ASSIGN) {
+                op_str = "-=";
+            }
+            fprintf(out, "%s %s ", node->assign.var_name, op_str);
+            traduzir_expressao(out, node->assign.expr);
+            fprintf(out, ";\n");
+            break;
+        }
+
+        case NODE_EXPR_STMT:
+            emit_indent(out, indent);
+            traduzir_expressao(out, node->expr_stmt.expr);
             fprintf(out, ";\n");
             break;
 
