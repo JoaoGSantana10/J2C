@@ -156,6 +156,53 @@ static void traduzir_if(FILE *out, const ASTNode *node, int indent) {
     }
 }
 
+static void traduzir_atribuicao_sem_terminador(FILE *out, const ASTNode *node) {
+    if (!node || node->type != NODE_ASSIGN) return;
+    const char *op_str = "=";
+    if (node->assign.op == AST_ASG_PLUS_ASSIGN) {
+        op_str = "+=";
+    } else if (node->assign.op == AST_ASG_MINUS_ASSIGN) {
+        op_str = "-=";
+    }
+    fprintf(out, "%s %s ", node->assign.var_name, op_str);
+    traduzir_expressao(out, node->assign.expr);
+}
+
+static void traduzir_for(FILE *out, const ASTNode *node, int indent) {
+    fprintf(out, "for (");
+    if (node->for_stmt.init) {
+        if (node->for_stmt.init->type == NODE_VAR_DECL) {
+            fprintf(out, "%s %s", mapear_tipo(node->for_stmt.init->var_decl.type_name),
+                    node->for_stmt.init->var_decl.name);
+            if (node->for_stmt.init->var_decl.init) {
+                fprintf(out, " = ");
+                traduzir_expressao(out, node->for_stmt.init->var_decl.init);
+            }
+        } else if (node->for_stmt.init->type == NODE_ASSIGN) {
+            traduzir_atribuicao_sem_terminador(out, node->for_stmt.init);
+        }
+    }
+    fprintf(out, ";");
+    if (node->for_stmt.condition) {
+        fprintf(out, " ");
+        traduzir_expressao(out, node->for_stmt.condition);
+    }
+    fprintf(out, ";");
+    if (node->for_stmt.increment) {
+        fprintf(out, " ");
+        if (node->for_stmt.increment->type == NODE_ASSIGN) {
+            traduzir_atribuicao_sem_terminador(out, node->for_stmt.increment);
+        } else {
+            traduzir_expressao(out, node->for_stmt.increment);
+        }
+    }
+    fprintf(out, ") ");
+    traduzir_corpo_comando(out, node->for_stmt.body, indent);
+    if (node->for_stmt.body && node->for_stmt.body->type == NODE_BLOCK) {
+        fprintf(out, "\n");
+    }
+}
+
 void traduzir_comando(FILE *out, const ASTNode *node, int indent) {
     if (!node) return;
 
@@ -181,19 +228,11 @@ void traduzir_comando(FILE *out, const ASTNode *node, int indent) {
             fprintf(out, ";\n");
             break;
 
-        case NODE_ASSIGN: {
+        case NODE_ASSIGN:
             emit_indent(out, indent);
-            const char *op_str = "=";
-            if (node->assign.op == AST_ASG_PLUS_ASSIGN) {
-                op_str = "+=";
-            } else if (node->assign.op == AST_ASG_MINUS_ASSIGN) {
-                op_str = "-=";
-            }
-            fprintf(out, "%s %s ", node->assign.var_name, op_str);
-            traduzir_expressao(out, node->assign.expr);
+            traduzir_atribuicao_sem_terminador(out, node);
             fprintf(out, ";\n");
             break;
-        }
 
         case NODE_EXPR_STMT:
             emit_indent(out, indent);
@@ -225,6 +264,36 @@ void traduzir_comando(FILE *out, const ASTNode *node, int indent) {
         case NODE_IF:
             emit_indent(out, indent);
             traduzir_if(out, node, indent);
+            break;
+
+        case NODE_WHILE:
+            emit_indent(out, indent);
+            fprintf(out, "while (");
+            traduzir_expressao(out, node->while_stmt.condition);
+            fprintf(out, ") ");
+            traduzir_corpo_comando(out, node->while_stmt.body, indent);
+            if (node->while_stmt.body && node->while_stmt.body->type == NODE_BLOCK) {
+                fprintf(out, "\n");
+            }
+            break;
+
+        case NODE_DO_WHILE:
+            emit_indent(out, indent);
+            fprintf(out, "do ");
+            traduzir_corpo_comando(out, node->do_while_stmt.body, indent);
+            if (node->do_while_stmt.body && node->do_while_stmt.body->type == NODE_BLOCK) {
+                fprintf(out, " while (");
+            } else {
+                emit_indent(out, indent);
+                fprintf(out, "while (");
+            }
+            traduzir_expressao(out, node->do_while_stmt.condition);
+            fprintf(out, ");\n");
+            break;
+
+        case NODE_FOR:
+            emit_indent(out, indent);
+            traduzir_for(out, node, indent);
             break;
 
         default:
