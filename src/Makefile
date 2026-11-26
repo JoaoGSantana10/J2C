@@ -30,10 +30,15 @@ test-parser: parser
 test-ast: parser
 	bash run_ast_tests.sh
 
+# Testes unitários da tradução de nós da AST
+test-traducao: test_traducao.c traducao.c traducao.h ast.c ast.h
+	$(CC) $(CFLAGS) -Wextra -fsanitize=address,undefined test_traducao.c traducao.c ast.c -o unit_tests_traducao
+	./unit_tests_traducao
+
 # Roda todos os testes do projeto
-test: test-scanner test-symtab test-parser test-ast
+test: test-scanner test-symtab test-parser test-ast test-traducao
 
 clean:
-	rm -f lex.yy.c parser.tab.c parser.tab.h parser unit_tests unit_tests_symtab
+	rm -f lex.yy.c parser.tab.c parser.tab.h parser unit_tests unit_tests_symtab unit_tests_traducao
 
-.PHONY: all test-scanner test-symtab test-parser test-ast test clean
+.PHONY: all test-scanner test-symtab test-parser test-ast test-traducao test clean
