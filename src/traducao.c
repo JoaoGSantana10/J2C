@@ -154,6 +154,27 @@ void traduzir_comando(FILE *out, const ASTNode *node, int indent) {
             fprintf(out, ";\n");
             break;
 
+        case NODE_BREAK:
+            emit_indent(out, indent);
+            fprintf(out, "break;\n");
+            break;
+
+        case NODE_CONTINUE:
+            emit_indent(out, indent);
+            fprintf(out, "continue;\n");
+            break;
+
+        case NODE_RETURN:
+            emit_indent(out, indent);
+            if (node->return_stmt.expr) {
+                fprintf(out, "return ");
+                traduzir_expressao(out, node->return_stmt.expr);
+                fprintf(out, ";\n");
+            } else {
+                fprintf(out, "return;\n");
+            }
+            break;
+
         default:
             break;
     }
