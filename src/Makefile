@@ -5,10 +5,10 @@ BISON = bison
 
 all: parser
 
-parser: parser.y scanner.l symtab.c symtab.h semantico.c semantico.h ast.c ast.h
+parser: parser.y scanner.l symtab.c symtab.h semantico.c semantico.h ast.c ast.h codegen.c codegen.h
 	$(BISON) -d parser.y
 	$(FLEX) scanner.l
-	$(CC) $(CFLAGS) parser.tab.c lex.yy.c symtab.c semantico.c ast.c -o parser
+	$(CC) $(CFLAGS) parser.tab.c lex.yy.c symtab.c semantico.c ast.c codegen.c -o parser
 
 # Testes unitários de tokens do scanner
 test-scanner: parser.y scanner.l test_runner.c ast.c ast.h
@@ -30,15 +30,24 @@ test-parser: parser
 test-ast: parser
 	bash run_ast_tests.sh
 
+# Testes de geração de código
+test-codegen: test_codegen.c codegen.c codegen.h ast.c ast.h
+	$(CC) $(CFLAGS) -o test_codegen test_codegen.c codegen.c ast.c
+	./test_codegen
+
+# Testes de ponta a ponta: Java -> ./parser -> C -> gcc
+test-codegen-e2e: parser
+	bash run_codegen_tests.sh
+
 # Testes unitários da tradução de nós da AST
 test-traducao: test_traducao.c traducao.c traducao.h ast.c ast.h
 	$(CC) $(CFLAGS) -Wextra -fsanitize=address,undefined test_traducao.c traducao.c ast.c -o unit_tests_traducao
 	./unit_tests_traducao
 
 # Roda todos os testes do projeto
-test: test-scanner test-symtab test-parser test-ast test-traducao
+test: test-scanner test-symtab test-parser test-ast test-codegen test-codegen-e2e test-traducao
 
 clean:
-	rm -f lex.yy.c parser.tab.c parser.tab.h parser unit_tests unit_tests_symtab unit_tests_traducao
+	rm -f lex.yy.c parser.tab.c parser.tab.h parser unit_tests unit_tests_symtab test_codegen saida.c unit_tests_traducao
 
-.PHONY: all test-scanner test-symtab test-parser test-ast test-traducao test clean
+.PHONY: all test-scanner test-symtab test-parser test-ast test-codegen test-codegen-e2e test-traducao test clean

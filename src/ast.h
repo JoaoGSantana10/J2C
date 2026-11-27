@@ -43,7 +43,8 @@ typedef enum {
     NODE_LITERAL_LONG,
     NODE_LITERAL_CHAR,
     NODE_LITERAL_STRING,
-    NODE_LITERAL_BOOL
+    NODE_LITERAL_BOOL,
+    NODE_COUNT /* sentinela: mantenha sempre por último */
 } NodeType;
 
 typedef enum {

@@ -328,6 +328,8 @@ static int is_literal(const ASTNode *node) {
 /* Imprime o rotulo do no (sem quebra de linha) */
 static void print_label(const ASTNode *node) {
     switch (node->type) {
+        case NODE_COUNT: /* sentinela, nunca é um nó real */
+            break;
         case NODE_PROGRAM:
             printf("Programa");
             break;
@@ -577,6 +579,8 @@ void ast_free(ASTNode *node) {
         ASTNode *next = node->next;
 
         switch (node->type) {
+            case NODE_COUNT: /* sentinela, nunca é um nó real */
+                break;
             case NODE_PROGRAM:
                 ast_free(node->program.body);
                 break;

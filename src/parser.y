@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include "ast.h"
 #include "semantico.h"
+#include "codegen.h"
 
 int yylex(void);
 void yyerror(const char *s);
@@ -351,7 +352,9 @@ void yyerror(const char *s) {
     fprintf(stderr, "Erro de sintaxe: %s perto da linha %d\n", s, yylineno);
 }
 
-int main(void) {
+int main(int argc, char **argv) {
+    /* Gera C só se o usuário passar o arquivo de saída: ./parser saida.c */
+    const char *saida_c = (argc > 1) ? argv[1] : NULL;
     int result = yyparse();
 
     if (contErroLex > 0) {
@@ -368,15 +371,23 @@ int main(void) {
     if (result == 0) {
         printf("Análise sintática concluída com sucesso!\n");
         int erros_sem = ast_raiz ? semantico_analisar(ast_raiz) : 0;
+        int erro_gen = 0;
+
         if (ast_raiz) {
             ast_print(ast_raiz);
-            ast_free(ast_raiz);
+            if (erros_sem == 0 && saida_c != NULL)
+                erro_gen = (codegen_gerar_arquivo(ast_raiz, saida_c) != CODEGEN_OK);
+            ast_free(ast_raiz);   /* sempre depois da geração */
         }
         if (erros_sem > 0) {
             fprintf(stderr, "Foram encontrados %d erro(s) semântico(s)\n", erros_sem);
             return 1;
         }
-        return 0; /* Código 0: Sucesso */
+        if (erro_gen) {
+            fprintf(stderr, "Falha na geração de código C: '%s' não foi gerado\n", saida_c);
+            return 1;
+        }
+        return 0;
     }
 
     if (ast_raiz) {
