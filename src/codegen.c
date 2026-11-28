@@ -220,6 +220,45 @@ static const ASTNode *busca_funcao(const Ctx *c, const char *nome)
     return NULL;
 }
 
+/* ------------------- entrada e saída: nomes ------------------------ */
+
+static int eh_tipo_scanner(const char *tipo)
+{
+    return tipo != NULL && strcmp(tipo, "Scanner") == 0;
+}
+
+/* System.out.println / System.out.print: 2 = println, 1 = print, 0 = não. */
+static int tipo_saida(const char *nome)
+{
+    if (nome == NULL)
+        return 0;
+    if (strcmp(nome, "System.out.println") == 0)
+        return 2;
+    if (strcmp(nome, "System.out.print") == 0)
+        return 1;
+    return 0;
+}
+
+/* "sc.nextInt": se `sc` é uma variável Scanner visível, devolve o nome do
+ * método ("nextInt"); senão, NULL. */
+static const char *metodo_scanner(const Ctx *c, const char *nome)
+{
+    const char *ponto = (nome != NULL) ? strchr(nome, '.') : NULL;
+    size_t n, i;
+
+    if (ponto == NULL || strchr(ponto + 1, '.') != NULL)
+        return NULL;
+    n = (size_t)(ponto - nome);
+    for (i = c->n_visiveis; i > 0; i--) {
+        const Visivel *v = &c->visiveis[i - 1];
+
+        if (strlen(v->nome) == n && strncmp(v->nome, nome, n) == 0)
+            return (eh_tipo_scanner(v->tipo) && !v->is_array) ? ponto + 1
+                                                              : NULL;
+    }
+    return NULL;
+}
+
 /* --------------------- tipo Java de uma expressão ------------------ */
 
 /* Só o necessário para barrar traduções que mudariam o significado
@@ -314,9 +353,21 @@ static TipoExpr tipo_expr(const Ctx *c, const ASTNode *e)
         v = busca_variavel(c, e->identifier.name);
         return v ? tipo_de_nome(v->tipo, v->is_array) : TE_DESCONHECIDO;
 
-    case NODE_CALL:
+    case NODE_CALL: {
+        const char *m = metodo_scanner(c, e->call.func_name);
+
+        if (m != NULL) {
+            if (strcmp(m, "nextInt") == 0)
+                return TE_INT;
+            if (strcmp(m, "nextDouble") == 0)
+                return TE_DOUBLE;
+            return strcmp(m, "close") == 0 ? TE_VOID : TE_DESCONHECIDO;
+        }
+        if (tipo_saida(e->call.func_name))
+            return TE_VOID;
         f = busca_funcao(c, e->call.func_name);
         return f ? tipo_de_nome(f->func_decl.return_type, 0) : TE_DESCONHECIDO;
+    }
 
     case NODE_UNARY_OP:
         if (e->unary_op.op == AST_UN_NOT)
@@ -596,9 +647,17 @@ static const char *op_unario_c(UnaryOpType op)
 static void gen_identificador(Ctx *c, const ASTNode *e)
 {
     const char *nome = e->identifier.name;
+    const Visivel *v;
 
     if (nome == NULL || nome[0] == '\0') {
         gen_erro(c, e->lineno, "identificador vazio");
+        return;
+    }
+    v = busca_variavel(c, nome);
+    if (v != NULL && eh_tipo_scanner(v->tipo)) {
+        /* O Scanner não existe no C: só as chamadas a ele são traduzidas. */
+        gen_erro(c, e->lineno, "o Scanner '%s' só pode ser usado para chamar "
+                 "nextInt, nextDouble ou close", nome);
         return;
     }
     if (busca_variavel(c, nome) == NULL && busca_funcao(c, nome) != NULL) {
@@ -708,9 +767,85 @@ static void gen_unary_op(Ctx *c, const ASTNode *e)
     gen_operando(c, o, 1);
 }
 
+/* System.out.println(x) / System.out.print(x) -> printf com o formato do
+ * tipo de x. Um argumento só: concatenação com String ainda não é
+ * suportada. boolean sai como "true"/"false", igual ao Java. */
+static void gen_saida(Ctx *c, const ASTNode *e, int como_comando,
+                      int nova_linha)
+{
+    const ASTNode *a = e->call.args;
+    const char *nl = nova_linha ? "\\n" : "";
+    const char *fmt;
+
+    if (!como_comando) {
+        gen_erro(c, e->lineno, "'%s' não retorna valor", e->call.func_name);
+        return;
+    }
+    if (a == NULL) {
+        if (!nova_linha) {
+            gen_erro(c, e->lineno, "System.out.print precisa de um argumento");
+            return;
+        }
+        emitir(c, 0, "printf(\"\\n\")");
+        return;
+    }
+    if (a->next != NULL) {
+        gen_erro(c, e->lineno, "'%s' aceita só um argumento",
+                 e->call.func_name);
+        return;
+    }
+
+    switch (tipo_expr(c, a)) {
+    case TE_INT:     fmt = "%d";   break;
+    case TE_LONG:    fmt = "%lld"; break;
+    case TE_FLOAT:   fmt = "%f";   break;
+    case TE_DOUBLE:  fmt = "%lf";  break;
+    case TE_CHAR:    fmt = "%c";   break;
+    case TE_STRING:  fmt = "%s";   break;
+    case TE_BOOLEAN:
+        emitir(c, 0, "printf(\"%%s%s\", (", nl);
+        gen_expr(c, a, 0);
+        emitir(c, 0, ") ? \"true\" : \"false\")");
+        return;
+    default:
+        gen_erro(c, e->lineno, "não foi possível descobrir o tipo do valor "
+                 "impresso por '%s'", e->call.func_name);
+        return;
+    }
+    emitir(c, 0, "printf(\"%s%s\", ", fmt, nl);
+    gen_expr(c, a, 0);
+    emitir(c, 0, ")");
+}
+
+/* sc.nextInt() / sc.nextDouble() leem da entrada padrão por funções
+ * auxiliares geradas no início do arquivo; sc.close() não faz nada. */
+static void gen_chamada_scanner(Ctx *c, const ASTNode *e, const char *metodo,
+                                int como_comando)
+{
+    if (e->call.args != NULL) {
+        gen_erro(c, e->lineno, "Scanner.%s não recebe argumentos", metodo);
+        return;
+    }
+    if (strcmp(metodo, "nextInt") == 0) {
+        emitir(c, 0, "j2c_ler_int()");
+    } else if (strcmp(metodo, "nextDouble") == 0) {
+        emitir(c, 0, "j2c_ler_double()");
+    } else if (strcmp(metodo, "close") == 0) {
+        if (!como_comando) {
+            gen_erro(c, e->lineno, "Scanner.close não retorna valor");
+            return;
+        }
+        emitir(c, 0, "(void)0");
+    } else {
+        gen_erro(c, e->lineno, "Scanner.%s ainda não é suportado (use "
+                 "nextInt ou nextDouble)", metodo);
+    }
+}
+
 static void gen_chamada(Ctx *c, const ASTNode *e, int como_comando)
 {
     const char *nome = e->call.func_name;
+    const char *metodo;
     const ASTNode *f, *a, *p;
     int n_args = 0, n_params = 0;
 
@@ -718,11 +853,20 @@ static void gen_chamada(Ctx *c, const ASTNode *e, int como_comando)
         gen_erro(c, e->lineno, "chamada sem nome");
         return;
     }
+    if (tipo_saida(nome)) {
+        gen_saida(c, e, como_comando, tipo_saida(nome) == 2);
+        return;
+    }
+    metodo = metodo_scanner(c, nome);
+    if (metodo != NULL) {
+        gen_chamada_scanner(c, e, metodo, como_comando);
+        return;
+    }
     if (strchr(nome, '.') != NULL) {
-        /* System.out.println, sc.nextInt()... são da issue de entrada e
-         * saída. A chamada nunca é descartada em silêncio. */
-        gen_erro(c, e->lineno, "chamada qualificada '%s' ainda não é "
-                 "suportada (será tratada pela issue de entrada e saída)", nome);
+        /* Outras chamadas qualificadas (Math.max, objetos...) nunca são
+         * descartadas em silêncio. */
+        gen_erro(c, e->lineno, "chamada qualificada '%s' não é suportada",
+                 nome);
         return;
     }
 
@@ -975,10 +1119,37 @@ static void gen_expr_stmt(Ctx *c, const ASTNode *no, int nivel)
 
 /* --------------------------- declarações --------------------------- */
 
+/* Scanner sc = new Scanner(System.in);  O C lê direto de stdin, então nada
+ * é declarado: só um comentário. O nome fica visível para que sc.nextInt()
+ * seja reconhecido. */
+static void gen_scanner_decl(Ctx *c, const ASTNode *no, int nivel)
+{
+    const ASTNode *init = no->var_decl.init;
+
+    if (!nome_valido(c, no->var_decl.name, no->lineno, "variável"))
+        return;
+    if (init == NULL || init->type != NODE_NEW ||
+        init->new_expr.class_name == NULL ||
+        strcmp(init->new_expr.class_name, "Scanner") != 0 ||
+        init->new_expr.arg_name == NULL ||
+        strcmp(init->new_expr.arg_name, "System.in") != 0) {
+        gen_erro(c, no->lineno, "Scanner '%s' precisa ser criado com "
+                 "new Scanner(System.in)", no->var_decl.name);
+        return;
+    }
+    emitir(c, nivel, "/* Scanner %s: leitura da entrada padrão */\n",
+           no->var_decl.name);
+    declarar_visivel(c, no->var_decl.name, no->var_decl.type_name, 0);
+}
+
 static void gen_var_decl(Ctx *c, const ASTNode *no, int nivel)
 {
     const char *tipo_c;
 
+    if (eh_tipo_scanner(no->var_decl.type_name)) {
+        gen_scanner_decl(c, no, nivel);
+        return;
+    }
     if (!nome_valido(c, no->var_decl.name, no->lineno, "variável"))
         return;
     tipo_c = tipo_c_de(c, no->var_decl.type_name, no->lineno);
@@ -1237,7 +1408,8 @@ static void gen_class(Ctx *c, const ASTNode *no, int nivel)
 
     for (m = no->class_decl.members; m != NULL && !c->erro; m = m->next) {
         if (m->type == NODE_VAR_DECL) {
-            if (m->var_decl.init != NULL && !eh_constante(m->var_decl.init)) {
+            if (m->var_decl.init != NULL && !eh_constante(m->var_decl.init) &&
+                !eh_tipo_scanner(m->var_decl.type_name)) {
                 gen_erro(c, m->lineno, "campo '%s': inicializador de variável "
                          "global precisa ser constante (só literais e "
                          "operadores)",
@@ -1359,6 +1531,74 @@ static void gen_no(Ctx *c, const ASTNode *no, int nivel)
     }
 }
 
+/* O programa declara algum Scanner (campo ou variável local)? */
+static int usa_scanner(const ASTNode *n)
+{
+    for (; n != NULL; n = n->next) {
+        switch (n->type) {
+        case NODE_PROGRAM:
+            if (usa_scanner(n->program.body)) return 1;
+            break;
+        case NODE_CLASS:
+            if (usa_scanner(n->class_decl.members)) return 1;
+            break;
+        case NODE_FUNC_DECL:
+            if (usa_scanner(n->func_decl.body)) return 1;
+            break;
+        case NODE_BLOCK:
+            if (usa_scanner(n->block.statements)) return 1;
+            break;
+        case NODE_VAR_DECL:
+            if (eh_tipo_scanner(n->var_decl.type_name)) return 1;
+            break;
+        case NODE_IF:
+            if (usa_scanner(n->if_stmt.then_branch) ||
+                usa_scanner(n->if_stmt.else_branch)) return 1;
+            break;
+        case NODE_WHILE:
+            if (usa_scanner(n->while_stmt.body)) return 1;
+            break;
+        case NODE_DO_WHILE:
+            if (usa_scanner(n->do_while_stmt.body)) return 1;
+            break;
+        case NODE_FOR:
+            if (usa_scanner(n->for_stmt.init) ||
+                usa_scanner(n->for_stmt.body)) return 1;
+            break;
+        case NODE_SWITCH:
+            if (usa_scanner(n->switch_stmt.cases)) return 1;
+            break;
+        case NODE_CASE:
+            if (usa_scanner(n->case_stmt.statements)) return 1;
+            break;
+        case NODE_DEFAULT:
+            if (usa_scanner(n->default_stmt.statements)) return 1;
+            break;
+        default:
+            break;
+        }
+    }
+    return 0;
+}
+
+/* Funções de leitura usadas por sc.nextInt() e sc.nextDouble(). Não são
+ * static para o gcc não avisar quando só uma delas é usada. Entrada
+ * inválida ou fim da entrada devolvem 0 (o Java lançaria exceção). */
+static void gen_auxiliares_scanner(Ctx *c)
+{
+    emitir(c, 0, "/* Leitura da entrada padrão (Scanner) */\n");
+    emitir(c, 0, "int j2c_ler_int(void)\n{\n");
+    emitir(c, 1, "int v = 0;\n\n");
+    emitir(c, 1, "if (scanf(\"%%d\", &v) != 1)\n");
+    emitir(c, 2, "v = 0;\n");
+    emitir(c, 1, "return v;\n}\n\n");
+    emitir(c, 0, "double j2c_ler_double(void)\n{\n");
+    emitir(c, 1, "double v = 0.0;\n\n");
+    emitir(c, 1, "if (scanf(\"%%lf\", &v) != 1)\n");
+    emitir(c, 2, "v = 0.0;\n");
+    emitir(c, 1, "return v;\n}\n\n");
+}
+
 /* --------------------------- API pública --------------------------- */
 
 int codegen_gerar(const ASTNode *raiz, FILE *saida)
@@ -1385,6 +1625,8 @@ int codegen_gerar(const ASTNode *raiz, FILE *saida)
     emitir(&c, 0, "#include <stdio.h>\n");
     emitir(&c, 0, "#include <stdlib.h>\n");
     emitir(&c, 0, "#include <stdbool.h>\n\n");
+    if (usa_scanner(raiz))
+        gen_auxiliares_scanner(&c);
 
     gen_no(&c, raiz, 0);
     free(c.visiveis);
