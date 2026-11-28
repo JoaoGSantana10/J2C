@@ -21,6 +21,8 @@ typedef struct {
     int tem_main;        /* já foi gerada uma main a partir do Java */
     int em_main;         /* dentro do corpo da main (return -> return 0) */
     int retorno_void;    /* dentro de uma função de retorno void */
+    int n_lacos;         /* laços abertos no ponto atual (break/continue) */
+    int n_switches;      /* switches abertos no ponto atual (break) */
     const ASTNode *membros;  /* membros da classe (para achar as funções) */
     Visivel *visiveis;   /* pilha: do escopo mais externo ao mais interno */
     size_t n_visiveis;
@@ -1119,6 +1121,37 @@ static void gen_expr_stmt(Ctx *c, const ASTNode *no, int nivel)
 
 /* --------------------------- declarações --------------------------- */
 
+/* Valida a declaração e devolve o tipo C (ou NULL, com erro registrado). */
+static const char *tipo_c_da_variavel(Ctx *c, const ASTNode *no)
+{
+    const char *tipo_c;
+
+    if (!nome_valido(c, no->var_decl.name, no->lineno, "variável"))
+        return NULL;
+    tipo_c = tipo_c_de(c, no->var_decl.type_name, no->lineno);
+    if (tipo_c == NULL)
+        return NULL;
+    if (strcmp(tipo_c, "void") == 0) {
+        gen_erro(c, no->lineno, "variável '%s' não pode ser void",
+                 no->var_decl.name);
+        return NULL;
+    }
+    return tipo_c;
+}
+
+/* "tipo nome = init", sem ';' (o init do for também usa). */
+static void gen_declarador_var(Ctx *c, const ASTNode *no, const char *tipo_c)
+{
+    emitir_declarador(c, tipo_c, 0, no->var_decl.name);
+    if (no->var_decl.init != NULL) {
+        emitir(c, 0, " = ");
+        gen_expr_completa(c, no->var_decl.init, NULL, 0);
+    }
+
+    /* Só fica visível depois do inicializador, como em Java. */
+    declarar_visivel(c, no->var_decl.name, no->var_decl.type_name, 0);
+}
+
 /* Scanner sc = new Scanner(System.in);  O C lê direto de stdin, então nada
  * é declarado: só um comentário. O nome fica visível para que sc.nextInt()
  * seja reconhecido. */
@@ -1150,27 +1183,12 @@ static void gen_var_decl(Ctx *c, const ASTNode *no, int nivel)
         gen_scanner_decl(c, no, nivel);
         return;
     }
-    if (!nome_valido(c, no->var_decl.name, no->lineno, "variável"))
-        return;
-    tipo_c = tipo_c_de(c, no->var_decl.type_name, no->lineno);
+    tipo_c = tipo_c_da_variavel(c, no);
     if (tipo_c == NULL)
         return;
-    if (strcmp(tipo_c, "void") == 0) {
-        gen_erro(c, no->lineno, "variável '%s' não pode ser void",
-                 no->var_decl.name);
-        return;
-    }
-
     emitir(c, nivel, "");
-    emitir_declarador(c, tipo_c, 0, no->var_decl.name);
-    if (no->var_decl.init != NULL) {
-        emitir(c, 0, " = ");
-        gen_expr_completa(c, no->var_decl.init, NULL, 0);
-    }
+    gen_declarador_var(c, no, tipo_c);
     emitir(c, 0, ";\n");
-
-    /* Só fica visível depois do inicializador, como em Java. */
-    declarar_visivel(c, no->var_decl.name, no->var_decl.type_name, 0);
 }
 
 static void gen_param(Ctx *c, const ASTNode *no)
@@ -1335,6 +1353,286 @@ static void gen_return(Ctx *c, const ASTNode *no, int nivel)
         gen_expr_completa(c, e, NULL, 0);
         emitir(c, 0, ";\n");
     }
+}
+
+/* ------------------------ controle de fluxo ------------------------ */
+
+/* Condição de if, while, do-while e for. Em C qualquer escalar serve de
+ * condição; em Java, só boolean. Se o tipo é conhecido e não é boolean
+ * (if (n) com n int, if (s) com String, que viraria teste de ponteiro), a
+ * tradução compilaria em C mas mudaria o significado: é rejeitada. */
+static void gen_condicao(Ctx *c, const ASTNode *cond, int linha,
+                         const char *comando)
+{
+    TipoExpr t;
+
+    if (cond == NULL) {
+        gen_erro(c, linha, "%s sem condição", comando);
+        return;
+    }
+    t = tipo_expr(c, cond);
+    if (t != TE_BOOLEAN && t != TE_DESCONHECIDO) {
+        gen_erro(c, linha, "a condição do %s precisa ser boolean", comando);
+        return;
+    }
+    gen_expr_completa(c, cond, NULL, 0);
+}
+
+/* Corpo de if, else, while, do-while e for, no mesmo formato das funções:
+ * quebra de linha, '{' na própria linha, comandos, '}' e quebra de linha.
+ * As chaves são sempre geradas, mesmo quando o Java não tem bloco:
+ *  - em C uma declaração não pode ser o corpo direto ("if (x) int y;");
+ *  - o else fica sempre associado ao if certo (sem else pendurado).
+ * As variáveis declaradas no corpo deixam de ser visíveis no '}'. */
+static void gen_corpo(Ctx *c, const ASTNode *corpo, int nivel, int linha,
+                      const char *comando)
+{
+    size_t escopo = c->n_visiveis;
+
+    if (corpo == NULL) {
+        gen_erro(c, linha, "%s sem corpo", comando);
+        return;
+    }
+    emitir(c, 0, "\n");
+    emitir(c, nivel, "{\n");
+    if (corpo->type == NODE_BLOCK)
+        gen_lista(c, corpo->block.statements, nivel + 1);
+    else
+        gen_no(c, corpo, nivel + 1);
+    emitir(c, nivel, "}\n");
+    c->n_visiveis = escopo;
+}
+
+/* A indentação da linha já foi escrita por quem chama, para o "else if"
+ * sair na mesma linha. */
+static void gen_if(Ctx *c, const ASTNode *no, int nivel)
+{
+    const ASTNode *senao = no->if_stmt.else_branch;
+
+    emitir(c, 0, "if (");
+    gen_condicao(c, no->if_stmt.condition, no->lineno, "if");
+    emitir(c, 0, ")");
+    gen_corpo(c, no->if_stmt.then_branch, nivel, no->lineno, "if");
+
+    if (senao == NULL)
+        return;
+    if (senao->type == NODE_IF) {
+        emitir(c, nivel, "else ");
+        gen_if(c, senao, nivel);
+    } else {
+        emitir(c, nivel, "else");
+        gen_corpo(c, senao, nivel, no->lineno, "else");
+    }
+}
+
+static void gen_while(Ctx *c, const ASTNode *no, int nivel)
+{
+    emitir(c, nivel, "while (");
+    gen_condicao(c, no->while_stmt.condition, no->lineno, "while");
+    emitir(c, 0, ")");
+    c->n_lacos++;
+    gen_corpo(c, no->while_stmt.body, nivel, no->lineno, "while");
+    c->n_lacos--;
+}
+
+/* As variáveis do corpo não são visíveis na condição, como em Java. */
+static void gen_do_while(Ctx *c, const ASTNode *no, int nivel)
+{
+    emitir(c, nivel, "do");
+    c->n_lacos++;
+    gen_corpo(c, no->do_while_stmt.body, nivel, no->lineno, "do-while");
+    c->n_lacos--;
+    emitir(c, nivel, "while (");
+    gen_condicao(c, no->do_while_stmt.condition, no->lineno, "do-while");
+    emitir(c, 0, ");\n");
+}
+
+/* Incremento do for: atribuição ou expressão que vale como comando (++,
+ * -- ou chamada), as mesmas que o Java aceita ali. */
+static void gen_incremento_for(Ctx *c, const ASTNode *inc, int linha)
+{
+    if (inc->type == NODE_ASSIGN) {
+        gen_atribuicao(c, inc);
+        return;
+    }
+    if (inc->type != NODE_CALL &&
+        !(inc->type == NODE_UNARY_OP &&
+          (inc->unary_op.op == AST_UN_INC || inc->unary_op.op == AST_UN_DEC))) {
+        gen_erro(c, linha, "incremento do for precisa ser uma atribuição, "
+                 "chamada, ++ ou --");
+        return;
+    }
+    gen_expr_completa(c, inc, NULL, 1);
+}
+
+/* for (init; condição; incremento). Uma variável declarada no init (C99)
+ * só existe dentro do for, como em Java: dois for seguidos podem usar
+ * "int i". Init, condição e incremento são opcionais. */
+static void gen_for(Ctx *c, const ASTNode *no, int nivel)
+{
+    const ASTNode *init = no->for_stmt.init;
+    size_t escopo = c->n_visiveis;
+
+    emitir(c, nivel, "for (");
+    if (init != NULL) {
+        if (init->type == NODE_VAR_DECL &&
+            eh_tipo_scanner(init->var_decl.type_name)) {
+            gen_erro(c, no->lineno, "Scanner não pode ser declarado no for");
+        } else if (init->type == NODE_VAR_DECL) {
+            const char *tipo_c = tipo_c_da_variavel(c, init);
+
+            if (tipo_c != NULL)
+                gen_declarador_var(c, init, tipo_c);
+        } else if (init->type == NODE_ASSIGN) {
+            gen_atribuicao(c, init);
+        } else {
+            gen_erro(c, no->lineno, "inicialização do for precisa ser uma "
+                     "declaração ou atribuição");
+        }
+    }
+    emitir(c, 0, ";");
+    if (no->for_stmt.condition != NULL) {
+        emitir(c, 0, " ");
+        gen_condicao(c, no->for_stmt.condition, no->lineno, "for");
+    }
+    emitir(c, 0, ";");
+    if (no->for_stmt.increment != NULL) {
+        emitir(c, 0, " ");
+        gen_incremento_for(c, no->for_stmt.increment, no->lineno);
+    }
+    emitir(c, 0, ")");
+
+    c->n_lacos++;
+    gen_corpo(c, no->for_stmt.body, nivel, no->lineno, "for");
+    c->n_lacos--;
+    c->n_visiveis = escopo;
+}
+
+/* Rótulo de case: o C só aceita constante inteira. Java também aceita
+ * String, que em C seria comparação de ponteiros. */
+static int case_valido(Ctx *c, const ASTNode *caso)
+{
+    const ASTNode *v = caso->case_stmt.value;
+
+    if (v == NULL) {
+        gen_erro(c, caso->lineno, "case sem valor");
+        return 0;
+    }
+    if (v->type != NODE_LITERAL_INT && v->type != NODE_LITERAL_CHAR) {
+        gen_erro(c, caso->lineno, "case só pode ter valor int ou char "
+                 "(switch com String ainda não é suportado)");
+        return 0;
+    }
+    return 1;
+}
+
+/* Confere a lista de cases antes de escrever qualquer coisa: só case e
+ * default, no máximo um default e nenhum valor repetido (erro em C). */
+static int cases_validos(Ctx *c, const ASTNode *casos)
+{
+    const ASTNode *a, *b;
+    int defaults = 0;
+
+    for (a = casos; a != NULL; a = a->next) {
+        if (a->type == NODE_DEFAULT) {
+            if (++defaults > 1) {
+                gen_erro(c, a->lineno, "switch com mais de um default");
+                return 0;
+            }
+            continue;
+        }
+        if (a->type != NODE_CASE) {
+            gen_erro(c, a->lineno, "switch só pode conter case e default");
+            return 0;
+        }
+        if (!case_valido(c, a))
+            return 0;
+        for (b = casos; b != a; b = b->next) {
+            if (b->type == NODE_CASE &&
+                b->case_stmt.value->literal.value != NULL &&
+                a->case_stmt.value->literal.value != NULL &&
+                strcmp(b->case_stmt.value->literal.value,
+                       a->case_stmt.value->literal.value) == 0) {
+                gen_erro(c, a->lineno, "case %s repetido no switch",
+                         a->case_stmt.value->literal.value);
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
+/* O break de cada case vem da AST: nenhum break é inserido, então o
+ * fall-through do Java é preservado. Como em Java, uma variável declarada
+ * em um case vale até o fim do switch. */
+static void gen_switch(Ctx *c, const ASTNode *no, int nivel)
+{
+    const ASTNode *e = no->switch_stmt.expr;
+    const ASTNode *caso, *cmds;
+    size_t escopo = c->n_visiveis;
+    TipoExpr t;
+
+    if (e == NULL) {
+        gen_erro(c, no->lineno, "switch sem expressão");
+        return;
+    }
+    t = tipo_expr(c, e);
+    if (t != TE_INT && t != TE_CHAR && t != TE_DESCONHECIDO) {
+        gen_erro(c, no->lineno, "switch só pode ser traduzido sobre int ou "
+                 "char");
+        return;
+    }
+    if (!cases_validos(c, no->switch_stmt.cases))
+        return;
+
+    emitir(c, nivel, "switch (");
+    gen_expr_completa(c, e, NULL, 0);
+    emitir(c, 0, ")\n");
+    emitir(c, nivel, "{\n");
+
+    c->n_switches++;
+    for (caso = no->switch_stmt.cases; caso != NULL && !c->erro;
+         caso = caso->next) {
+        if (caso->type == NODE_CASE) {
+            emitir(c, nivel + 1, "case ");
+            gen_expr(c, caso->case_stmt.value, 0);
+            emitir(c, 0, ":");
+            cmds = caso->case_stmt.statements;
+        } else {
+            emitir(c, nivel + 1, "default:");
+            cmds = caso->default_stmt.statements;
+        }
+        /* Até o C17, um rótulo precisa ser seguido de um comando: não pode
+         * vir logo antes de uma declaração nem do '}' final. O ';' vazio
+         * resolve os dois casos sem mudar nada. */
+        if ((cmds == NULL && caso->next == NULL) ||
+            (cmds != NULL && cmds->type == NODE_VAR_DECL))
+            emitir(c, 0, " ;");
+        emitir(c, 0, "\n");
+        gen_lista(c, cmds, nivel + 2);
+    }
+    c->n_switches--;
+
+    emitir(c, nivel, "}\n");
+    c->n_visiveis = escopo;
+}
+
+static void gen_break(Ctx *c, const ASTNode *no, int nivel)
+{
+    if (c->n_lacos == 0 && c->n_switches == 0) {
+        gen_erro(c, no->lineno, "break fora de laço ou switch");
+        return;
+    }
+    emitir(c, nivel, "break;\n");
+}
+
+static void gen_continue(Ctx *c, const ASTNode *no, int nivel)
+{
+    if (c->n_lacos == 0) {
+        gen_erro(c, no->lineno, "continue fora de laço");
+        return;
+    }
+    emitir(c, nivel, "continue;\n");
 }
 
 /* --------------------------- classe -------------------------------- */
@@ -1514,6 +1812,42 @@ static void gen_no(Ctx *c, const ASTNode *no, int nivel)
 
     case NODE_EXPR_STMT:
         gen_expr_stmt(c, no, nivel);
+        break;
+
+    case NODE_IF:
+        emitir(c, nivel, "");
+        gen_if(c, no, nivel);
+        break;
+
+    case NODE_WHILE:
+        gen_while(c, no, nivel);
+        break;
+
+    case NODE_DO_WHILE:
+        gen_do_while(c, no, nivel);
+        break;
+
+    case NODE_FOR:
+        gen_for(c, no, nivel);
+        break;
+
+    case NODE_SWITCH:
+        gen_switch(c, no, nivel);
+        break;
+
+    case NODE_CASE:
+    case NODE_DEFAULT:
+        /* São percorridos por gen_switch; soltos, a AST está errada. */
+        gen_erro(c, no->lineno, "%s fora de switch",
+                 no->type == NODE_CASE ? "case" : "default");
+        break;
+
+    case NODE_BREAK:
+        gen_break(c, no, nivel);
+        break;
+
+    case NODE_CONTINUE:
+        gen_continue(c, no, nivel);
         break;
 
     default:
