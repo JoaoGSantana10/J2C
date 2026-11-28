@@ -42,11 +42,11 @@ O projeto implementa todas as etapas clássicas do pipeline de compilação:
 - [x] **Estruturas de Controle:** `if`, `else`, `while`, `for`.
 - [x] **Funções e Métodos:** Parâmetros, valores de retorno e recursão.
 - [x] **Entrada e Saída:** Reconhecimento de `System.out.println(...)`.
-- [x] **Estruturas de Dados:** Reconhecimento de arrays unidimensionais.
+- [ ] **Estruturas de Dados:** arrays ainda não são suportados (`int[] a = new int[10];` e `a[i]` geram erro de sintaxe). Só parâmetros do tipo `String[]` são aceitos, como o `args` da `main`.
 - [ ] **Geração de Código Completa:** Tradução dos nós da AST para C.
 - [ ] **Orientação a Objetos:** Mapeamento de Classes e Objetos para `structs` e ponteiros em C.
 
-> **Estado atual da geração:** o gerador implementa `NODE_PROGRAM`, `NODE_CLASS`, `NODE_VAR_DECL`, `NODE_FUNC_DECL`, `NODE_PARAM`, `NODE_BLOCK`, `NODE_RETURN`, as expressões (`NODE_BIN_OP`, `NODE_UNARY_OP`, `NODE_CALL`, `NODE_IDENTIFIER` e literais), `NODE_ASSIGN` e `NODE_EXPR_STMT`, além de `System.out.println`/`print` e da leitura com `Scanner` (`nextInt` e `nextDouble`). Outros `new` e chamadas qualificadas são rejeitados com erro. As estruturas de controle (`if`, laços, `switch`) ainda não possuem tradução C.
+> **Estado atual da geração:** o gerador implementa `NODE_PROGRAM`, `NODE_CLASS`, `NODE_VAR_DECL`, `NODE_FUNC_DECL`, `NODE_PARAM`, `NODE_BLOCK`, `NODE_RETURN`, as expressões (`NODE_BIN_OP`, `NODE_UNARY_OP`, `NODE_CALL`, `NODE_IDENTIFIER` e literais), `NODE_ASSIGN` e `NODE_EXPR_STMT`, além de `System.out.println`/`print` e da leitura com `Scanner` (`nextInt` e `nextDouble`). Outros `new` e chamadas qualificadas são rejeitados com erro. As estruturas de controle (`NODE_IF`, `NODE_WHILE`, `NODE_DO_WHILE`, `NODE_FOR`, `NODE_SWITCH`, `NODE_CASE`, `NODE_DEFAULT`, `NODE_BREAK` e `NODE_CONTINUE`) também são traduzidas.
 
 ---
 
@@ -149,7 +149,7 @@ O gerador cria o arquivo de saída com este contrato:
 
 Mapeamento de tipos: `int`→`int`, `long`→`long long`, `float`→`float`, `double`→`double`, `boolean`→`bool`, `char`→`char`, `void`→`void`, `String`→`char *` e `String[]`→`char **`. Tipos de classe ainda não são suportados e geram erro.
 
-A geração atual cobre declarações, tipos, funções e expressões. Outros nós válidos da AST (`if`, laços, `switch` etc.) ainda não têm tradução e fazem o gerador retornar erro sem criar ou preservar um arquivo C parcial. Também é erro: nome ausente ou igual a palavra reservada de C, nome repetido entre campos e funções (C não tem sobrecarga), parâmetro ou variável `void` e `main` com assinatura diferente de `main(String[] args)`.
+A geração atual cobre declarações, tipos, funções, expressões, controle de fluxo e entrada e saída. Um nó válido da AST que ainda não tenha tradução faz o gerador retornar erro sem criar ou preservar um arquivo C parcial. Também é erro: nome ausente ou igual a palavra reservada de C, nome repetido entre campos e funções (C não tem sobrecarga), parâmetro ou variável `void` e `main` com assinatura diferente de `main(String[] args)`.
 
 #### Expressões
 
@@ -178,6 +178,21 @@ Limitações conhecidas:
 - `double` e `float` saem com 6 casas (`2.5` vira `2.500000`), diferente do Java;
 - do `Scanner`, só `nextInt` e `nextDouble` (`next` e `nextLine` geram erro); entrada inválida ou fim da entrada devolve 0, em vez da exceção do Java;
 - arrays ainda não são suportados.
+
+#### Controle de fluxo
+
+- **`if`/`else`, `while`, `do-while` e `for`:** as chaves ficam em linha própria, como nas funções. O corpo é sempre gerado entre chaves, mesmo quando o Java não usa bloco: em C uma declaração não pode ser o corpo direto de um `if`, e assim o `else` fica sempre com o `if` certo.
+- **Escopo:** variáveis declaradas no corpo deixam de existir no `}`. A variável do `init` do `for` (`for (int i = 0; ...)`, C99) só existe dentro do `for`, então dois `for` seguidos podem usar `int i`. `for (;;)` e `for (; i < n;)` são preservados.
+- **`switch`/`case`/`default`:** nenhum `break` é inserido, então cases empilhados e *fall-through* funcionam como no Java. Uma variável declarada em um `case` vale até o fim do `switch`. Quando um rótulo vem logo antes de uma declaração ou do `}` final, é gerado um `;` vazio depois dele (`case 1: ;`), exigido pelo C até o C17.
+- **`return`:** `return;` dentro de laço na `main` também vira `return 0;`.
+
+São rejeitados com erro:
+
+- `break` fora de laço ou `switch` e `continue` fora de laço;
+- `if`, `while` ou `for` sem condição, `switch` sem expressão e `case`/`default` fora de um `switch`;
+- condição cujo tipo é conhecido e não é `boolean`, como `while (x)` com `x` int (em C compilaria; com `String` viraria teste de ponteiro);
+- `switch` sobre `String` (ou outro tipo que não seja `int`/`char`), `case` com valor que não seja `int`/`char`, `case` repetido e mais de um `default`;
+- incremento do `for` que não seja atribuição, chamada, `++` ou `--` (como `i + 1`).
 
 Para rodar os testes de ponta a ponta (Java → C → `gcc`):
 
