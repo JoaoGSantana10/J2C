@@ -16,7 +16,18 @@ Período: 03/11/2026 a 09/11/2026
 
 ## Reuniões
 
-> A preencher pelo time: data, local, horário e assuntos das reuniões desta Sprint.
+### Reunião 1
+
+**Data:** 04/11/2026  
+**Local:** Online  
+**Inicio:** 14:00  
+**Encerramento:** 15:50
+
+**Assuntos:**
+
+* Revisão das ações do Parser que constroem a AST e da comunicação entre Scanner e Parser.
+* Migração dos testes do parser para o formato com classe.
+* Revisão e merge dos Pull Requests pendentes.
 
 ## Finalização
 

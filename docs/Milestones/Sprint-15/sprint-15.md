@@ -18,7 +18,18 @@ Período: 24/11/2026 a 30/11/2026
 
 ## Reuniões
 
-> A preencher pelo time: data, local, horário e assuntos das reuniões desta Sprint.
+### Reunião 1
+
+**Data:** 25/11/2026  
+**Local:** Online  
+**Inicio:** 14:00  
+**Encerramento:** 15:50
+
+**Assuntos:**
+
+* Acompanhamento da implementação das issues de geração de código.
+* Integração da tradução de controle de fluxo e de entrada e saída no gerador.
+* Revisão e merge dos Pull Requests e preparação da entrega final.
 
 ## Finalização
 

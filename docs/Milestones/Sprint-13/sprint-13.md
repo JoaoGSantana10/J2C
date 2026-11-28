@@ -14,7 +14,18 @@ Período: 10/11/2026 a 16/11/2026
 
 ## Reuniões
 
-> A preencher pelo time: data, local, horário e assuntos das reuniões desta Sprint.
+### Reunião 1
+
+**Data:** 11/11/2026  
+**Local:** Online  
+**Inicio:** 14:00  
+**Encerramento:** 15:50
+
+**Assuntos:**
+
+* Formato da impressão da árvore sintática.
+* Estratégia da análise semântica de escopos com a Tabela de Símbolos.
+* Acompanhamento das tarefas em andamento.
 
 ## Finalização
 

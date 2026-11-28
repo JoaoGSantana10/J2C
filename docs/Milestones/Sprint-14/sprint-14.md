@@ -19,7 +19,18 @@ Período: 17/11/2026 a 23/11/2026
 
 ## Reuniões
 
-> A preencher pelo time: data, local, horário e assuntos das reuniões desta Sprint.
+### Reunião 1
+
+**Data:** 18/11/2026  
+**Local:** Online  
+**Inicio:** 14:00  
+**Encerramento:** 15:50
+
+**Assuntos:**
+
+* Revisão e merge dos Pull Requests da AST e da análise semântica.
+* Planejamento da geração de código C.
+* Divisão das issues de geração de código entre os membros do time.
 
 ## Finalização
 
