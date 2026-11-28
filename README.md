@@ -42,7 +42,7 @@ O projeto implementa todas as etapas clássicas do pipeline de compilação:
 - [x] **Estruturas de Controle:** `if`, `else`, `while`, `for`.
 - [x] **Funções e Métodos:** Parâmetros, valores de retorno e recursão.
 - [x] **Entrada e Saída:** Reconhecimento de `System.out.println(...)`.
-- [x] **Estruturas de Dados:** Reconhecimento de arrays unidimensionais.
+- [ ] **Estruturas de Dados:** arrays ainda não são suportados (`int[] a = new int[10];` e `a[i]` geram erro de sintaxe). Só parâmetros do tipo `String[]` são aceitos, como o `args` da `main`.
 - [ ] **Geração de Código Completa:** Tradução dos nós da AST para C.
 - [ ] **Orientação a Objetos:** Mapeamento de Classes e Objetos para `structs` e ponteiros em C.
 
