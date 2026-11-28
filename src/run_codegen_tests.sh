@@ -64,5 +64,26 @@ for entrada in tests/codegen/execucao/*.java; do
     fi
 done
 
+echo -e "\n--- Testes de Saída (programa gerado imprime o mesmo que o Java) ---"
+for entrada in tests/codegen/saida/*.java; do
+    [ -f "$entrada" ] || continue
+    esperado="${entrada%.java}.saida"
+    stdin="${entrada%.java}.entrada"
+    [ -f "$stdin" ] || stdin=/dev/null
+    base="$SAIDA/saida_$(basename "${entrada%.java}")"
+    if ./parser "$base.c" < "$entrada" > /dev/null 2> "$SAIDA/erro.txt" \
+       && gcc -Wall -Wno-unused-variable -Werror "$base.c" -o "$base" \
+              2> "$SAIDA/gcc.txt" \
+       && "$base" < "$stdin" > "$SAIDA/obtido.txt" \
+       && diff "$esperado" "$SAIDA/obtido.txt" > "$SAIDA/diff.txt"; then
+        echo -e " ${GREEN}[PASS]${NC} $entrada"
+        PASSED=$((PASSED + 1))
+    else
+        echo -e " ${RED}[FAIL]${NC} $entrada"
+        cat "$SAIDA/erro.txt" "$SAIDA/gcc.txt" "$SAIDA/diff.txt" 2>/dev/null
+        FAILED=$((FAILED + 1))
+    fi
+done
+
 echo -e "\nResultado: $PASSED passaram, $FAILED falharam"
 [ $FAILED -eq 0 ]

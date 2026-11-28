@@ -1,5 +1,5 @@
-public class Imprime {
-    public static void main(String[] args) {
-        System.out.println("oi");
+public class Qualificada {
+    static int f(int a, int b) {
+        return Math.max(a, b);
     }
 }

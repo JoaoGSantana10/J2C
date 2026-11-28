@@ -566,8 +566,8 @@ static void testes_expressoes(void)
     CHECA(expr_falha(ast_create_new(NULL, NULL, 1)), "new sem classe falha");
     CHECA(expr_falha(ast_create_new(S("Scanner"), S("System.in"), 1)),
           "new Scanner(System.in) é rejeitado (issue de E/S)");
-    CHECA(falha_com(func_abc(cmd(ast_create_call(S("System.out.println"),
-              lit(NODE_LITERAL_STRING, "\"oi\""), 1)))),
+    CHECA(falha_com(func_abc(cmd(ast_create_call(S("Math.max"),
+              ast_append(id("a"), id("b")), 1)))),
           "chamada qualificada não é descartada: falha");
     CHECA(expr_falha(un(AST_UN_INC, 1, lit_int("5"))), "5++ falha");
 
@@ -622,6 +622,133 @@ static void testes_expressoes(void)
                     "int r = i++ + j;"), "i++ + j (variáveis diferentes) é aceito");
 }
 
+/* ------------------------ entrada e saída -------------------------- */
+
+static ASTNode *blk(ASTNode *stmts) { return ast_create_block(stmts, 1); }
+
+static ASTNode *saida(const char *nome, ASTNode *arg)
+{
+    return cmd(ast_create_call(S(nome), arg, 1));
+}
+static ASTNode *scanner_decl(const char *nome)
+{
+    return decl("Scanner", nome, ast_create_new(S("Scanner"), S("System.in"), 1));
+}
+
+/* void main(String[] args) { <stmts> } */
+static ASTNode *main_com(ASTNode *stmts)
+{
+    return ast_create_func_decl(MOD_PUBLIC | MOD_STATIC, S("void"), S("main"),
+        ast_create_param(S("String"), S("args"), 1, 1), blk(stmts), 1);
+}
+
+static int io_gera(ASTNode *membros, const char *trecho)
+{
+    char buf[8192];
+    ASTNode *prog = programa(membros);
+    int ok = gera(prog, buf, sizeof buf) == CODEGEN_OK &&
+             strstr(buf, trecho) != NULL;
+
+    if (!ok)
+        printf("        esperado \"%s\" em:\n%s\n", trecho, buf);
+    ok = ok && compila(prog);
+    ast_free(prog);
+    return ok;
+}
+
+static void testes_entrada_saida(void)
+{
+    /* Formato escolhido pelo tipo do argumento */
+    CHECA(io_gera(main_com(saida("System.out.println",
+              lit(NODE_LITERAL_STRING, "\"Olá\""))),
+              "    printf(\"%s\\n\", \"Ol"), "println(String literal) -> %s\\n");
+    CHECA(io_gera(main_com(ast_append(decl("int", "n", lit_int("10")),
+              saida("System.out.println", id("n")))),
+              "    printf(\"%d\\n\", n);\n"), "println(int) -> %d");
+    CHECA(io_gera(main_com(ast_append(decl("int", "n", lit_int("10")),
+              saida("System.out.println", bin(AST_OP_ADD, id("n"), lit_int("1"))))),
+              "    printf(\"%d\\n\", n + 1);\n"), "println(n + 1) -> %d");
+    CHECA(io_gera(main_com(saida("System.out.println",
+              lit(NODE_LITERAL_LONG, "5L"))),
+              "printf(\"%lld\\n\", 5LL);"), "println(long) -> %lld");
+    CHECA(io_gera(main_com(saida("System.out.println",
+              lit(NODE_LITERAL_DOUBLE, "2.5"))),
+              "printf(\"%lf\\n\", 2.5);"), "println(double) -> %lf");
+    CHECA(io_gera(main_com(saida("System.out.println",
+              lit(NODE_LITERAL_FLOAT, "1.5f"))),
+              "printf(\"%f\\n\", 1.5f);"), "println(float) -> %f");
+    CHECA(io_gera(main_com(saida("System.out.println",
+              lit(NODE_LITERAL_CHAR, "'x'"))),
+              "printf(\"%c\\n\", 'x');"), "println(char) -> %c");
+    CHECA(io_gera(main_com(saida("System.out.println",
+              bin(AST_OP_LT, lit_int("1"), lit_int("2")))),
+              "printf(\"%s\\n\", (1 < 2) ? \"true\" : \"false\");"),
+          "println(boolean) -> true/false");
+    CHECA(io_gera(main_com(saida("System.out.print",
+              lit(NODE_LITERAL_STRING, "\"x\""))),
+              "printf(\"%s\", \"x\");"), "print sem quebra de linha");
+    CHECA(io_gera(main_com(saida("System.out.println", NULL)),
+              "    printf(\"\\n\");\n"), "println() -> printf(\"\\n\")");
+
+    /* Scanner: declaração vira comentário, nextInt/nextDouble viram as
+     * funções auxiliares, close não faz nada */
+    CHECA(io_gera(main_com(ast_append(ast_append(ast_append(scanner_decl("sc"),
+              decl("int", "v", ast_create_call(S("sc.nextInt"), NULL, 1))),
+              decl("double", "d", ast_create_call(S("sc.nextDouble"), NULL, 1))),
+              cmd(ast_create_call(S("sc.close"), NULL, 1)))),
+              "    /* Scanner sc: leitura da entrada padrão */\n"
+              "    int v = j2c_ler_int();\n"
+              "    double d = j2c_ler_double();\n"
+              "    (void)0;\n"),
+          "Scanner, nextInt, nextDouble e close");
+    CHECA(io_gera(main_com(scanner_decl("sc")), "int j2c_ler_int(void)\n{"),
+          "funções auxiliares geradas quando há Scanner");
+    CHECA(io_gera(ast_append(scanner_decl("entrada"),
+              main_com(saida("System.out.println",
+                  ast_create_call(S("entrada.nextInt"), NULL, 1)))),
+              "printf(\"%d\\n\", j2c_ler_int());"),
+          "Scanner como campo e println(sc.nextInt())");
+    {
+        char buf[4096];
+        ASTNode *prog = programa(main_com(saida("System.out.println", NULL)));
+
+        CHECA(gera(prog, buf, sizeof buf) == CODEGEN_OK &&
+              strstr(buf, "j2c_ler_int") == NULL,
+              "sem Scanner, sem funções auxiliares");
+        ast_free(prog);
+    }
+
+    /* --- negativos --- */
+    CHECA(falha_com(main_com(saida("System.out.println",
+              ast_append(lit_int("1"), lit_int("2"))))),
+          "println com dois argumentos falha");
+    CHECA(falha_com(main_com(saida("System.out.print", NULL))),
+          "print sem argumento falha");
+    CHECA(falha_com(main_com(saida("System.out.println",
+              bin(AST_OP_ADD, lit(NODE_LITERAL_STRING, "\"n=\""), lit_int("1"))))),
+          "println com concatenação falha");
+    CHECA(falha_com(ast_append(main_com(saida("System.out.println",
+              ast_create_call(S("g"), NULL, 1))), func("void", "g", NULL, NULL))),
+          "println de função void falha");
+    CHECA(falha_com(main_com(decl("int", "x", ast_create_call(
+              S("System.out.println"), NULL, 1)))),
+          "println usado como valor falha");
+    CHECA(falha_com(main_com(ast_append(scanner_decl("sc"),
+              decl("String", "s", ast_create_call(S("sc.nextLine"), NULL, 1))))),
+          "Scanner.nextLine (não suportado) falha");
+    CHECA(falha_com(main_com(decl("Scanner", "sc",
+              ast_create_new(S("Scanner"), S("arquivo"), 1)))),
+          "Scanner sem System.in falha");
+    CHECA(falha_com(main_com(decl("Scanner", "sc", NULL))),
+          "Scanner sem new falha");
+    CHECA(falha_com(main_com(ast_append(scanner_decl("sc"),
+              saida("System.out.println", id("sc"))))),
+          "Scanner usado como valor falha");
+    CHECA(falha_com(main_com(ast_append(scanner_decl("sc"),
+              decl("int", "v", ast_create_call(S("sc.nextInt"), lit_int("1"), 1))))),
+          "nextInt com argumento falha");
+}
+
 static void testes_falha_sem_arquivo(void)
 {
     ASTNode *prog;
@@ -652,6 +779,7 @@ int main(void)
     testes_funcoes();
     testes_main();
     testes_expressoes();
+    testes_entrada_saida();
     testes_falha_sem_arquivo();
 
     printf(falhas ? "\n%d falha(s)\n" : "\ntodos os testes passaram\n", falhas);
