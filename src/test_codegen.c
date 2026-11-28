@@ -749,6 +749,245 @@ static void testes_entrada_saida(void)
           "nextInt com argumento falha");
 }
 
+/* ------------------------ controle de fluxo ------------------------ */
+
+static ASTNode *asg(AssignOpType op, const char *v, ASTNode *e)
+{
+    return ast_create_assign(op, S(v), e, 1);
+}
+static ASTNode *caso(const char *v, ASTNode *stmts)
+{
+    return ast_create_case(lit_int(v), stmts, 1);
+}
+
+/* int f(int a, int b, int c, int i, int j) com `stmts` no corpo: gera,
+ * confere o trecho e compila no gcc. */
+static int controle_gera(ASTNode *stmts, const char *trecho)
+{
+    return io_gera(func_abc(stmts), trecho);
+}
+
+static void testes_controle(void)
+{
+    /* if / else if / else, com e sem bloco no Java */
+    CHECA(controle_gera(
+              ast_create_if(bin(AST_OP_GT, id("a"), lit_int("0")),
+                  blk(asg(AST_ASG_ASSIGN, "b", lit_int("1"))),
+                  ast_create_if(bin(AST_OP_LT, id("a"), lit_int("0")),
+                      asg(AST_ASG_ASSIGN, "b", lit_int("2")),
+                      asg(AST_ASG_ASSIGN, "b", lit_int("3")), 1), 1),
+              "    if (a > 0)\n"
+              "    {\n"
+              "        b = 1;\n"
+              "    }\n"
+              "    else if (a < 0)\n"
+              "    {\n"
+              "        b = 2;\n"
+              "    }\n"
+              "    else\n"
+              "    {\n"
+              "        b = 3;\n"
+              "    }\n"),
+          "if / else if / else (corpo sem bloco ganha chaves)");
+    CHECA(controle_gera(
+              ast_create_if(bin(AST_OP_EQ, id("a"), id("b")),
+                  ast_create_return(lit_int("1"), 1), NULL, 1),
+              "    if (a == b)\n    {\n        return 1;\n    }\n    return 0;"),
+          "if sem else");
+    /* else associado ao if certo: if (a) { if (b) x; } else y; */
+    CHECA(controle_gera(
+              ast_create_if(bin(AST_OP_GT, id("a"), lit_int("0")),
+                  ast_create_if(bin(AST_OP_GT, id("b"), lit_int("0")),
+                      asg(AST_ASG_ASSIGN, "c", lit_int("1")), NULL, 1),
+                  asg(AST_ASG_ASSIGN, "c", lit_int("2")), 1),
+              "    if (a > 0)\n"
+              "    {\n"
+              "        if (b > 0)\n"
+              "        {\n"
+              "            c = 1;\n"
+              "        }\n"
+              "    }\n"
+              "    else\n"
+              "    {\n"
+              "        c = 2;\n"
+              "    }\n"),
+          "else fica com o if externo (if aninhado)");
+
+    /* Declaração como corpo sem bloco: em C só vale dentro de chaves */
+    CHECA(controle_gera(
+              ast_create_if(bin(AST_OP_GT, id("a"), lit_int("0")),
+                  decl("int", "y", lit_int("1")), NULL, 1),
+              "    if (a > 0)\n    {\n        int y = 1;\n    }\n"),
+          "declaração como corpo do if fica entre chaves");
+
+    /* while e do-while, com break e continue */
+    CHECA(controle_gera(
+              ast_create_while(bin(AST_OP_LT, id("i"), lit_int("10")),
+                  blk(ast_append(ast_append(
+                      cmd(un(AST_UN_INC, 1, id("i"))),
+                      ast_create_if(bin(AST_OP_EQ, id("i"), lit_int("5")),
+                          blk(ast_create_continue(1)), NULL, 1)),
+                      ast_create_if(bin(AST_OP_EQ, id("i"), lit_int("8")),
+                          blk(ast_create_break(1)), NULL, 1))), 1),
+              "    while (i < 10)\n"
+              "    {\n"
+              "        i++;\n"
+              "        if (i == 5)\n"
+              "        {\n"
+              "            continue;\n"
+              "        }\n"
+              "        if (i == 8)\n"
+              "        {\n"
+              "            break;\n"
+              "        }\n"
+              "    }\n"),
+          "while com continue e break");
+    CHECA(controle_gera(
+              ast_create_do_while(blk(cmd(un(AST_UN_DEC, 1, id("i")))),
+                  bin(AST_OP_GT, id("i"), lit_int("0")), 1),
+              "    do\n    {\n        i--;\n    }\n    while (i > 0);\n"),
+          "do-while");
+
+    /* for: init declarado (C99), atribuição, partes vazias */
+    CHECA(controle_gera(
+              ast_create_for(decl("int", "k", lit_int("0")),
+                  bin(AST_OP_LT, id("k"), lit_int("10")),
+                  un(AST_UN_INC, 1, id("k")),
+                  blk(asg(AST_ASG_PLUS_ASSIGN, "a", id("k"))), 1),
+              "    for (int k = 0; k < 10; k++)\n    {\n        a += k;\n    }\n"),
+          "for com declaração no init");
+    CHECA(controle_gera(
+              ast_create_for(asg(AST_ASG_ASSIGN, "i", lit_int("0")),
+                  bin(AST_OP_LT, id("i"), id("a")),
+                  asg(AST_ASG_PLUS_ASSIGN, "i", lit_int("2")),
+                  cmd(un(AST_UN_INC, 1, id("b"))), 1),
+              "    for (i = 0; i < a; i += 2)\n    {\n        b++;\n    }\n"),
+          "for com atribuições no init e no incremento");
+    CHECA(controle_gera(
+              ast_create_for(NULL, NULL, NULL, blk(ast_create_break(1)), 1),
+              "    for (;;)\n    {\n        break;\n    }\n"),
+          "for (;;) com partes vazias");
+    CHECA(controle_gera(
+              ast_create_for(NULL, bin(AST_OP_LT, id("i"), lit_int("3")), NULL,
+                  blk(cmd(un(AST_UN_INC, 1, id("i")))), 1),
+              "    for (; i < 3;)\n"),
+          "for (; condição;) preserva as partes vazias");
+    /* O 'int k' do init some no fim do for: dois for seguidos podem usar */
+    CHECA(controle_gera(ast_append(
+              ast_create_for(decl("int", "k", lit_int("0")),
+                  bin(AST_OP_LT, id("k"), lit_int("2")),
+                  un(AST_UN_INC, 1, id("k")), blk(NULL), 1),
+              ast_create_for(decl("double", "k", lit(NODE_LITERAL_DOUBLE, "0.5")),
+                  bin(AST_OP_LT, id("k"), lit_int("2")),
+                  asg(AST_ASG_PLUS_ASSIGN, "k", lit(NODE_LITERAL_DOUBLE, "1.0")),
+                  blk(NULL), 1)),
+              "    for (double k = 0.5; k < 2; k += 1.0)\n    {\n    }\n"),
+          "escopo do init do for termina com o for");
+
+    /* switch, case, default, fallthrough e break vindos da AST */
+    CHECA(controle_gera(
+              ast_create_switch(id("a"), ast_append(ast_append(ast_append(
+                  caso("1", NULL),
+                  caso("2", ast_append(asg(AST_ASG_ASSIGN, "b", lit_int("10")),
+                                       ast_create_break(1)))),
+                  ast_create_case(lit(NODE_LITERAL_CHAR, "'x'"),
+                      ast_create_return(lit_int("7"), 1), 1)),
+                  ast_create_default(ast_append(
+                      asg(AST_ASG_ASSIGN, "b", lit_int("0")),
+                      ast_create_break(1)), 1)), 1),
+              "    switch (a)\n"
+              "    {\n"
+              "        case 1:\n"
+              "        case 2:\n"
+              "            b = 10;\n"
+              "            break;\n"
+              "        case 'x':\n"
+              "            return 7;\n"
+              "        default:\n"
+              "            b = 0;\n"
+              "            break;\n"
+              "    }\n"),
+          "switch com case vazio (fallthrough), char e default");
+    /* Rótulo antes de declaração e rótulo no fim do switch: ';' vazio */
+    CHECA(controle_gera(
+              ast_create_switch(id("a"), ast_append(
+                  caso("1", ast_append(decl("int", "t", lit_int("3")),
+                                       asg(AST_ASG_ASSIGN, "b", id("t")))),
+                  ast_create_default(NULL, 1)), 1),
+              "        case 1: ;\n"
+              "            int t = 3;\n"
+              "            b = t;\n"
+              "        default: ;\n"
+              "    }\n"),
+          "case seguido de declaração e default vazio no fim");
+    /* continue dentro de switch dentro de laço é válido */
+    CHECA(controle_gera(
+              ast_create_while(bin(AST_OP_LT, id("i"), lit_int("3")),
+                  blk(ast_append(cmd(un(AST_UN_INC, 1, id("i"))),
+                      ast_create_switch(id("i"),
+                          caso("1", ast_create_continue(1)), 1))), 1),
+              "            case 1:\n                continue;\n"),
+          "continue em switch dentro de laço");
+
+    /* return 0 na main dentro de laço */
+    CHECA(io_gera(main_com(ast_create_while(lit(NODE_LITERAL_BOOL, "true"),
+              blk(ast_create_return(NULL, 1)), 1)),
+              "    while (true)\n    {\n        return 0;\n    }\n"),
+          "return; dentro de laço na main vira return 0;");
+
+    /* --- negativos --- */
+    CHECA(falha_com(func_abc(ast_create_break(1))), "break fora de laço falha");
+    CHECA(falha_com(func_abc(ast_create_continue(1))),
+          "continue fora de laço falha");
+    CHECA(falha_com(func_abc(ast_create_switch(id("a"),
+              caso("1", ast_create_continue(1)), 1))),
+          "continue em switch fora de laço falha");
+    CHECA(falha_com(func_abc(ast_create_if(id("a"), blk(NULL), NULL, 1))),
+          "if com condição int falha");
+    CHECA(falha_com(func_abc(ast_append(decl("String", "s",
+              lit(NODE_LITERAL_STRING, "\"x\"")),
+              ast_create_while(id("s"), blk(NULL), 1)))),
+          "while com condição String falha");
+    CHECA(falha_com(func_abc(ast_create_if(NULL, blk(NULL), NULL, 1))),
+          "if sem condição falha");
+    CHECA(falha_com(func_abc(ast_create_while(NULL, blk(NULL), 1))),
+          "while sem condição falha");
+    CHECA(falha_com(func_abc(ast_create_switch(NULL, NULL, 1))),
+          "switch sem expressão falha");
+    CHECA(falha_com(func_abc(ast_create_if(id("a"), NULL, NULL, 1))),
+          "if sem corpo falha");
+    CHECA(falha_com(func_abc(ast_create_for(NULL, NULL,
+              bin(AST_OP_ADD, id("i"), lit_int("1")), blk(NULL), 1))),
+          "incremento do for sem efeito (i + 1) falha");
+    CHECA(falha_com(func_abc(ast_create_for(cmd(un(AST_UN_INC, 1, id("i"))),
+              NULL, NULL, blk(NULL), 1))),
+          "init do for que não é declaração nem atribuição falha");
+    CHECA(falha_com(func_abc(ast_append(decl("String", "s",
+              lit(NODE_LITERAL_STRING, "\"x\"")),
+              ast_create_switch(id("s"), NULL, 1)))),
+          "switch sobre String falha");
+    CHECA(falha_com(func_abc(ast_create_switch(id("a"),
+              ast_create_case(lit(NODE_LITERAL_STRING, "\"x\""), NULL, 1), 1))),
+          "case com String falha");
+    CHECA(falha_com(func_abc(ast_create_switch(id("a"),
+              ast_append(caso("1", NULL), caso("1", NULL)), 1))),
+          "case repetido falha");
+    CHECA(falha_com(func_abc(ast_create_switch(id("a"),
+              ast_append(ast_create_default(NULL, 1),
+                         ast_create_default(NULL, 1)), 1))),
+          "dois defaults falham");
+    CHECA(falha_com(func_abc(caso("1", NULL))),
+          "case fora de switch (lista de cases no nó errado) falha");
+    CHECA(falha_com(func_abc(ast_create_if(
+              bin(AST_OP_LT, un(AST_UN_INC, 1, id("i")), id("i")),
+              blk(NULL), NULL, 1))),
+          "condição com i++ < i (indefinido em C) falha");
+    CHECA(falha_com(main_com(ast_create_for(decl("Scanner", "sc",
+              ast_create_new(S("Scanner"), S("System.in"), 1)),
+              NULL, NULL, blk(NULL), 1))),
+          "Scanner declarado no init do for falha");
+}
+
 static void testes_falha_sem_arquivo(void)
 {
     ASTNode *prog;
@@ -780,6 +1019,7 @@ int main(void)
     testes_main();
     testes_expressoes();
     testes_entrada_saida();
+    testes_controle();
     testes_falha_sem_arquivo();
 
     printf(falhas ? "\n%d falha(s)\n" : "\ntodos os testes passaram\n", falhas);
