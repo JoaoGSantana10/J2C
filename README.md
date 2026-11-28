@@ -46,7 +46,7 @@ O projeto implementa todas as etapas clássicas do pipeline de compilação:
 - [ ] **Geração de Código Completa:** Tradução dos nós da AST para C.
 - [ ] **Orientação a Objetos:** Mapeamento de Classes e Objetos para `structs` e ponteiros em C.
 
-> **Estado atual da geração:** o gerador implementa `NODE_PROGRAM`, `NODE_CLASS`, `NODE_VAR_DECL`, `NODE_FUNC_DECL`, `NODE_PARAM`, `NODE_BLOCK`, `NODE_RETURN`, as expressões (`NODE_BIN_OP`, `NODE_UNARY_OP`, `NODE_CALL`, `NODE_IDENTIFIER` e literais), `NODE_ASSIGN` e `NODE_EXPR_STMT`. `NODE_NEW` e chamadas qualificadas (`System.out.println`) são rejeitados com erro até a issue de entrada e saída. As estruturas de controle (`if`, laços, `switch`) ainda não possuem tradução C.
+> **Estado atual da geração:** o gerador implementa `NODE_PROGRAM`, `NODE_CLASS`, `NODE_VAR_DECL`, `NODE_FUNC_DECL`, `NODE_PARAM`, `NODE_BLOCK`, `NODE_RETURN`, as expressões (`NODE_BIN_OP`, `NODE_UNARY_OP`, `NODE_CALL`, `NODE_IDENTIFIER` e literais), `NODE_ASSIGN` e `NODE_EXPR_STMT`, além de `System.out.println`/`print` e da leitura com `Scanner` (`nextInt` e `nextDouble`). Outros `new` e chamadas qualificadas são rejeitados com erro. As estruturas de controle (`if`, laços, `switch`) ainda não possuem tradução C.
 
 ---
 
@@ -165,7 +165,19 @@ São rejeitados com erro, em vez de gerar C que compila com outro significado:
 - `%` com `float`/`double` (não existe em C);
 - `++`/`--` em uma variável usada de novo na mesma expressão, como `i++ + i` ou `i = i++` (Java avalia da esquerda para a direita; em C é comportamento indefinido);
 - função `void` usada como valor, nome de função usado como variável e variável local com o mesmo nome de uma função chamada;
-- `new` (classes ainda não são traduzidas; `new Scanner(System.in)` fica para a issue de entrada e saída) e chamadas qualificadas como `System.out.println` (mesma issue).
+- `new` fora de `Scanner sc = new Scanner(System.in)` (classes ainda não são traduzidas) e chamadas qualificadas que não sejam de entrada e saída, como `Math.max`.
+
+#### Entrada e saída
+
+- **`System.out.println(x)` / `System.out.print(x)`** viram `printf`, com o formato escolhido pelo tipo de `x`: `int`→`%d`, `long`→`%lld`, `float`→`%f`, `double`→`%lf`, `char`→`%c`, `String`→`%s`. `boolean` é impresso como `true`/`false`, igual ao Java. `println()` sem argumento vira `printf("\n")`.
+- **`Scanner`:** `Scanner sc = new Scanner(System.in);` (local ou campo) não gera variável em C, só um comentário. `sc.nextInt()` e `sc.nextDouble()` chamam as funções `j2c_ler_int()` e `j2c_ler_double()`, geradas no início do arquivo quando o programa usa `Scanner`. `sc.close()` não faz nada.
+
+Limitações conhecidas:
+
+- `println` aceita um argumento só: a concatenação (`"n = " + n`) ainda gera erro, assim como um valor cujo tipo o gerador não consegue descobrir;
+- `double` e `float` saem com 6 casas (`2.5` vira `2.500000`), diferente do Java;
+- do `Scanner`, só `nextInt` e `nextDouble` (`next` e `nextLine` geram erro); entrada inválida ou fim da entrada devolve 0, em vez da exceção do Java;
+- arrays ainda não são suportados.
 
 Para rodar os testes de ponta a ponta (Java → C → `gcc`):
 
@@ -173,7 +185,7 @@ Para rodar os testes de ponta a ponta (Java → C → `gcc`):
 make test-codegen-e2e
 ```
 
-Além de compilar o C gerado, esses testes executam `tests/codegen/execucao/*.java`: o C gerado é linkado com um driver em C (arquivo `.c` de mesmo nome) que chama as funções e confere se o resultado é o mesmo do Java.
+Além de compilar o C gerado, esses testes executam `tests/codegen/execucao/*.java`: o C gerado é linkado com um driver em C (arquivo `.c` de mesmo nome) que chama as funções e confere se o resultado é o mesmo do Java. Os programas de `tests/codegen/saida/*.java` são compilados e executados de verdade: a saída é comparada com o arquivo `.saida` de mesmo nome, e o `.entrada`, quando existe, é usado como entrada padrão.
 
 ## Equipe
 
