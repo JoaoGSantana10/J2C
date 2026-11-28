@@ -30,7 +30,7 @@ O projeto implementa todas as etapas clássicas do pipeline de compilação:
 1. **Análise Léxica (_Scanning_):** Reconhecimento de tokens e remoção de espaços/comentários.
 2. **Análise Sintática (_Parsing_):** Validação gramatical e construção da Árvore de Sintaxe Abstrata (_AST - Abstract Syntax Tree_).
 3. **Análise Semântica (_Semantic Analysis_):** Tabela de símbolos, checagem e inferência de tipos, verificação de escopo e identificação de erros de tipo.
-4. **Geração de Código (_Code Generation_):** Mapeamento e tradução dos nós da AST para sintaxe C correspondente (ex: mapeamento de classes para `structs`, métodos para funções).
+4. **Geração de Código (_Code Generation_):** Mapeamento e tradução dos nós da AST para sintaxe C correspondente (ex: campos da classe para variáveis globais, métodos para funções, `System.out.println` para `printf`).
 
 ---
 
@@ -38,13 +38,13 @@ O projeto implementa todas as etapas clássicas do pipeline de compilação:
 
 ### Funcionalidades do Subconjunto Java Suportado:
 
-- [x] **Tipos Primitivos:** `int`, `double`, `boolean`, `char`.
-- [x] **Estruturas de Controle:** `if`, `else`, `while`, `for`.
+- [x] **Tipos:** `int`, `long`, `float`, `double`, `boolean`, `char` e `String`.
+- [x] **Estruturas de Controle:** `if`, `else`, `while`, `do-while`, `for`, `switch`/`case`/`default`, `break` e `continue`.
 - [x] **Funções e Métodos:** Parâmetros, valores de retorno e recursão.
-- [x] **Entrada e Saída:** Reconhecimento de `System.out.println(...)`.
+- [x] **Entrada e Saída:** `System.out.println(...)` e `System.out.print(...)` traduzidos para `printf`, e leitura com `Scanner` (`nextInt` e `nextDouble`).
+- [x] **Geração de Código:** tradução da AST para C compilável pelo GCC, exceto arrays e classes (itens abaixo).
 - [ ] **Estruturas de Dados:** arrays ainda não são suportados (`int[] a = new int[10];` e `a[i]` geram erro de sintaxe). Só parâmetros do tipo `String[]` são aceitos, como o `args` da `main`.
-- [ ] **Geração de Código Completa:** Tradução dos nós da AST para C.
-- [ ] **Orientação a Objetos:** Mapeamento de Classes e Objetos para `structs` e ponteiros em C.
+- [ ] **Orientação a Objetos:** Mapeamento de Classes e Objetos para `structs` e ponteiros em C. Hoje a classe principal é traduzida com os campos como variáveis globais e os métodos como funções; `new` de outras classes gera erro.
 
 > **Estado atual da geração:** o gerador implementa `NODE_PROGRAM`, `NODE_CLASS`, `NODE_VAR_DECL`, `NODE_FUNC_DECL`, `NODE_PARAM`, `NODE_BLOCK`, `NODE_RETURN`, as expressões (`NODE_BIN_OP`, `NODE_UNARY_OP`, `NODE_CALL`, `NODE_IDENTIFIER` e literais), `NODE_ASSIGN` e `NODE_EXPR_STMT`, além de `System.out.println`/`print` e da leitura com `Scanner` (`nextInt` e `nextDouble`). Outros `new` e chamadas qualificadas são rejeitados com erro. As estruturas de controle (`NODE_IF`, `NODE_WHILE`, `NODE_DO_WHILE`, `NODE_FOR`, `NODE_SWITCH`, `NODE_CASE`, `NODE_DEFAULT`, `NODE_BREAK` e `NODE_CONTINUE`) também são traduzidas.
 
