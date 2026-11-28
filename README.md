@@ -17,19 +17,20 @@
   - [Pré-requisitos](#pré-requisitos)
   - [Instalação e Build](#instalação-e-build)
   - [Compilando e Executando o Código C Gerado](#compilando-e-executando-o-código-c-gerado)
+- [⚠️ Limitações Conhecidas](#️-limitações-conhecidas)
 - [🤝 Equipe](#equipe)
 
 ---
 
 ## 📖 Sobre o Projeto
 
-O **J2C** é um transpilador (compilador de código para código) que traduz um subconjunto da linguagem **Java** para código-fonte em **C** (`ANSI C` / `C99`) eficiente e legível.
+O **J2C** é um transpilador (compilador de código para código) que traduz um subconjunto da linguagem **Java** para código-fonte em **C** (`C99`) legível.
 
 O projeto implementa todas as etapas clássicas do pipeline de compilação:
 
 1. **Análise Léxica (_Scanning_):** Reconhecimento de tokens e remoção de espaços/comentários.
 2. **Análise Sintática (_Parsing_):** Validação gramatical e construção da Árvore de Sintaxe Abstrata (_AST - Abstract Syntax Tree_).
-3. **Análise Semântica (_Semantic Analysis_):** Tabela de símbolos, checagem e inferência de tipos, verificação de escopo e identificação de erros de tipo.
+3. **Análise Semântica (_Semantic Analysis_):** Tabela de símbolos com escopos aninhados, usada para detectar nomes não declarados e redeclarações no mesmo escopo. A checagem de tipos é parcial e fica no gerador de código: ele descobre o tipo das expressões quando consegue e rejeita as traduções que mudariam o significado do programa (condição não `boolean`, `switch` sobre `String`, `%` com ponto flutuante, concatenação de `String`, número errado de argumentos, função `void` usada como valor). Veja as [Limitações Conhecidas](#️-limitações-conhecidas).
 4. **Geração de Código (_Code Generation_):** Mapeamento e tradução dos nós da AST para sintaxe C correspondente (ex: campos da classe para variáveis globais, métodos para funções, `System.out.println` para `printf`).
 
 ---
@@ -42,7 +43,7 @@ O projeto implementa todas as etapas clássicas do pipeline de compilação:
 - [x] **Estruturas de Controle:** `if`, `else`, `while`, `do-while`, `for`, `switch`/`case`/`default`, `break` e `continue`.
 - [x] **Funções e Métodos:** Parâmetros, valores de retorno e recursão.
 - [x] **Entrada e Saída:** `System.out.println(...)` e `System.out.print(...)` traduzidos para `printf`, e leitura com `Scanner` (`nextInt` e `nextDouble`).
-- [x] **Geração de Código:** tradução da AST para C compilável pelo GCC, exceto arrays e classes (itens abaixo).
+- [x] **Geração de Código:** tradução da AST para C compilável pelo GCC, para programas dentro do subconjunto suportado (sem arrays e classes, itens abaixo; veja também as [Limitações Conhecidas](#️-limitações-conhecidas)).
 - [ ] **Estruturas de Dados:** arrays ainda não são suportados (`int[] a = new int[10];` e `a[i]` geram erro de sintaxe). Só parâmetros do tipo `String[]` são aceitos, como o `args` da `main`.
 - [ ] **Orientação a Objetos:** Mapeamento de Classes e Objetos para `structs` e ponteiros em C. Hoje a classe principal é traduzida com os campos como variáveis globais e os métodos como funções; `new` de outras classes gera erro.
 
@@ -68,7 +69,7 @@ Certifique-se de possuir os seguintes componentes instalados e configurados no s
 
 1. **Compilador C (GCC ou Clang)**
    - **Linux / macOS:** GCC ou Clang pré-instalado (ou via `sudo apt install build-essential`).
-   - **Windows:** MinGW-w64, MSVC ou ambiente WSL.
+   - **Windows:** use o WSL (Ubuntu) e siga os passos de Debian/Ubuntu. O build depende de Flex, Bison, Make e Bash, então MSVC sozinho não serve.
    - Teste de instalação:
      ```bash
      gcc --version
@@ -155,7 +156,7 @@ A geração atual cobre declarações, tipos, funções, expressões, controle d
 
 - **Precedência e associatividade:** toda subexpressão binária é escrita entre parênteses, seguindo a AST. `a + b * c` vira `a + (b * c)` e `a - b - c` vira `(a - b) - c`, então o significado não depende da tabela de precedência do C.
 - **Unários:** `++`/`--` respeitam prefixo e pósfixo (`is_postfix`). Um unário aplicado a outro unário ou a uma expressão binária ganha parênteses: `-(-a)`, `-(a + b)`.
-- **Literais:** `10L` vira `10LL`; `3.14d` vira `3.14` e `5d` vira `5.0`; `5f` vira `5.0f`; `true`/`false` vêm de `<stdbool.h>`; `'\'` e `'''` recebem escape. Em `String`, `\uXXXX` vira os bytes UTF-8 em octal e octais do Java são normalizados para 3 dígitos.
+- **Literais:** `10L` vira `10LL`; `3.14d` vira `3.14` e `5d` vira `5.0`; `5f` vira `5.0f`; `true`/`false` vêm de `<stdbool.h>`; um `char` é sempre um único caractere entre aspas simples (escapes como `'\n'` ainda não são aceitos). Em `String`, `\uXXXX` vira os bytes UTF-8 em octal e octais do Java são normalizados para 3 dígitos.
 - **Chamadas e atribuições:** chamadas simples (`f(a, b + 1)`) e `=`, `+=`, `-=`. O número de argumentos é conferido com a declaração da função.
 - **Campos:** aceitam inicializadores constantes (literais e operadores, como `-1` ou `60 * 60`), porque variável global em C só aceita constante.
 
@@ -172,7 +173,7 @@ São rejeitados com erro, em vez de gerar C que compila com outro significado:
 - **`System.out.println(x)` / `System.out.print(x)`** viram `printf`, com o formato escolhido pelo tipo de `x`: `int`→`%d`, `long`→`%lld`, `float`→`%f`, `double`→`%lf`, `char`→`%c`, `String`→`%s`. `boolean` é impresso como `true`/`false`, igual ao Java. `println()` sem argumento vira `printf("\n")`.
 - **`Scanner`:** `Scanner sc = new Scanner(System.in);` (local ou campo) não gera variável em C, só um comentário. `sc.nextInt()` e `sc.nextDouble()` chamam as funções `j2c_ler_int()` e `j2c_ler_double()`, geradas no início do arquivo quando o programa usa `Scanner`. `sc.close()` não faz nada.
 
-Limitações conhecidas:
+Limitações de entrada e saída:
 
 - `println` aceita um argumento só: a concatenação (`"n = " + n`) ainda gera erro, assim como um valor cujo tipo o gerador não consegue descobrir;
 - `double` e `float` saem com 6 casas (`2.5` vira `2.500000`), diferente do Java;
@@ -201,6 +202,37 @@ make test-codegen-e2e
 ```
 
 Além de compilar o C gerado, esses testes executam `tests/codegen/execucao/*.java`: o C gerado é linkado com um driver em C (arquivo `.c` de mesmo nome) que chama as funções e confere se o resultado é o mesmo do Java. Os programas de `tests/codegen/saida/*.java` são compilados e executados de verdade: a saída é comparada com o arquivo `.saida` de mesmo nome, e o `.entrada`, quando existe, é usado como entrada padrão.
+
+---
+
+## ⚠️ Limitações Conhecidas
+
+O J2C aceita um subconjunto de Java. Os pontos abaixo ainda não são tratados.
+
+### Sintaxe não aceita
+
+Estes trechos geram erro léxico ou sintático, mesmo sendo Java válido:
+
+- `import` (inclusive `import java.util.Scanner;`): o arquivo precisa começar direto com `public class`. O `Scanner` funciona sem o import;
+- classe sem `public`, mais de uma classe no arquivo e o modificador `final`;
+- `char` com escape (`'\n'`, `'\''`, `'\\'`) e aspas escapadas dentro de `String` (`"diga \"oi\""`);
+- `*=`, `/=`, `%=`, operador ternário (`?:`), casts como `(int) x`, declaração de várias variáveis de uma vez (`int a, b;`) e comando vazio (`;`);
+- `default` antes de um `case` e `case` com valor negativo (`case -1:`);
+- `String args[]` (use `String[] args`);
+- literais hexadecimais (`0xFF`), com expoente (`1e5`) ou com `_` (`1_000`).
+
+### Checagem de tipos incompleta
+
+A análise semântica verifica escopo, mas não verifica tipos:
+
+- atribuição, inicialização, argumento e `return` com tipo incompatível não são verificados. `int x = "abc";` passa pelo J2C e só falha no `gcc`. `int x = 2.9;`, `boolean b = 5;` e `float f = 1.5;` são aceitos e convertidos como em C;
+- não são detectados `return` ausente em função não-`void`, variável usada sem inicializar, código inalcançável nem variável local que esconde outra local (como `int x` redeclarado num bloco interno). O Java recusa esses programas;
+- literais `int` fora do intervalo (`3000000000`) e estouro aritmético seguem o C: o estouro de `int` com sinal é comportamento indefinido em C, enquanto no Java o valor dá a volta.
+
+### Diferenças na geração
+
+- **Ordem de avaliação:** o Java avalia da esquerda para a direita, e o C não garante ordem. Chamadas com efeito colateral na mesma expressão, como `sub(sc.nextInt(), sc.nextInt())` ou `f() - g()`, podem dar um resultado diferente do Java. Com o GCC, `sub` com a entrada `10 3` dá `-7` em vez de `7`;
+- **Nomes da biblioteca C:** funções e campos com o nome de funções de `<stdio.h>` ou `<stdlib.h>` (`printf`, `div`, `exit`, `free`...) passam pelo J2C, mas geram erro no `gcc`.
 
 ## Equipe
 
@@ -232,7 +264,7 @@ Além de compilar o C gerado, esses testes executam `tests/codegen/execucao/*.ja
     </td>
     <td align="center">
       <a href="https://github.com/Nic0laslc">
-        <img src="https://github.com/Nic0laslc.png" width="100px;" alt="Rodrigo Barbosa"/><br />
+        <img src="https://github.com/Nic0laslc.png" width="100px;" alt="Nicolas Lopes"/><br />
         <sub><b>Nicolas Lopes</b></sub>
       </a>
     </td>
