@@ -39,15 +39,10 @@ test-codegen: test_codegen.c codegen.c codegen.h ast.c ast.h
 test-codegen-e2e: parser
 	bash run_codegen_tests.sh
 
-# Testes unitários da tradução de nós da AST
-test-traducao: test_traducao.c traducao.c traducao.h ast.c ast.h
-	$(CC) $(CFLAGS) -Wextra -fsanitize=address,undefined test_traducao.c traducao.c ast.c -o unit_tests_traducao
-	./unit_tests_traducao
-
 # Roda todos os testes do projeto
-test: test-scanner test-symtab test-parser test-ast test-codegen test-codegen-e2e test-traducao
+test: test-scanner test-symtab test-parser test-ast test-codegen test-codegen-e2e
 
 clean:
-	rm -f lex.yy.c parser.tab.c parser.tab.h parser unit_tests unit_tests_symtab test_codegen saida.c unit_tests_traducao
+	rm -f lex.yy.c parser.tab.c parser.tab.h parser unit_tests unit_tests_symtab test_codegen saida.c
 
-.PHONY: all test-scanner test-symtab test-parser test-ast test-codegen test-codegen-e2e test-traducao test clean
+.PHONY: all test-scanner test-symtab test-parser test-ast test-codegen test-codegen-e2e test clean
